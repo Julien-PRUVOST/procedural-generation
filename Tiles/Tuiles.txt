@@ -1,0 +1,21 @@
+# Rules
+R 18
+R C 1
+R C P
+
+# Encoding
+River R 0 0 0 0 0, R 0 0 0 0 0, R, 5
+
+River R R 0 0 0 0, R R 0 0 0 0, R, 2
+River R 0 R 0 0 0, R 0 R 0 0 0, R, 2
+River R 0 0 R 0 0, R 0 0 R 0 0, R, 2
+
+River R R 0 0 0 0, R R 0 0 0 0, 0, 2
+River R R R 0 0 0, R R R 0 0 0, 0, 2
+River R R R R 0 0, R R R R 0 0, 0, 2
+River R R R R R 0, R R R R R 0, 0, 2
+River R R R R R R, R R R R R R, 0, 2
+
+Mine 0 0 0 0 0 0, M M M M 0 0, M, 2 3
+Campfire 0 0 0 0 0 0, C 0 0 0 0 0, F, 3
+Building C 0 0 0 0 0, B B B B B B, B, 1
