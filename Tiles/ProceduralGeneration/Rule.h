@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <sstream>
 #include <string>
+#include <memory>
 
 namespace ProceduralGeneration
 {
@@ -57,44 +58,6 @@ namespace ProceduralGeneration
 			newTileElement = newTileElement_;
 		}
 	};
-
-
-#pragma region Deserialization
-
-	inline bool decodeAsInt(const string &word, char &c, unsigned int &n)
-	{
-		try
-		{
-			n = stoul(word);
-			return true;
-		}
-		catch (...)
-		{
-			c = word[0];
-			return false;
-		}
-	}
-
-	inline void deserialize(const string &line, unique_ptr<Rule>& rule)
-	{
-		istringstream input {line};
-
-		string subLine;
-		bool mask[3] = {true, true, true};
-		Rule::tile_element_type params[3];
-		Rule::value_type n = 0;
-
-		for (int i = 0; i < 3 && getline(input, subLine, ' '); ++i)
-		{
-			mask[i] = decodeAsInt(subLine, params[i], n);
-		}
-
-		if (!mask[0] && mask[1] && mask[2]) rule->create(params[0], n);
-		if (!mask[0] && !mask[1] && mask[2]) rule->create(params[0], params[1], n);
-		if (!mask[0] && !mask[1] && !mask[2]) rule->create(params[0], params[1], params[2]);
-	}
-
-#pragma endregion
 }
 
 

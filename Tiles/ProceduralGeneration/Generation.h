@@ -1,65 +1,74 @@
 ﻿#pragma once
-#include <fstream>
-#include <string>
 #include <vector>
 #include <memory>
+#include <random>
+#include <map>
 
 namespace ProceduralGeneration
 {
 	using namespace std;
 
-	template<class Grid, class Tile, class Rule = void>
-	class Generation
+	template<class Tile, class Rule = void>
+	class GenerationProcess
 	{
-		vector<unique_ptr<Rule>> rules;
-		vector<unique_ptr<Tile>> tiles;
+	public:
+		using rule_t = Rule;
+		using tile_t = Tile;
+		using rule_ptr = unique_ptr<Rule>;
+		using tile_ptr = unique_ptr<Tile>;
+
+		using tag_type = typename Tile::tag_type;
+
+	private:
+		vector<rule_ptr> rules;
+		map<tag_type, vector<tile_ptr>> tiles {};
+
+		/**
+		 * \brief The reproductibility of the seed cannot be guaranteed if multiple generation commands are used simultaneously on the same GenerationProcess
+		 */
+		mt19937 prng;
 
 	public:
-		void add(unique_ptr<Rule> && rule)
+		void add(rule_ptr &&rule)
 		{
-			rules.push_back(move(rule));
+			rules.push_back(std::move(rule));
 		}
 
-		void add(unique_ptr<Tile> && tile)
+		void add(tile_ptr &&tile)
 		{
-			tiles.push_back(move(tile));
+			tiles[tile->tag].push_back(std::move(tile));
+		}
+
+	public:
+		template <class Grid>
+		void populate(Grid &grid)
+		{
+			
+		}
+
+	public:
+		/**
+		 * \brief Is public only for debug puposes
+		 * \return A random position on the grid
+		 */
+		template <class Grid>
+		typename Grid::tile_type& getRandomPos(Grid grid)
+		{
+			uniform_int_distribution<typename Grid::coords_type> posChooser{ 0, grid.getSize() };
+
+			return grid.getTile(posChooser(prng));
+		}
+
+		template <class Grid>
+		void buildPath(
+			Grid grid,
+			tag_type tagStart,
+			tag_type tagGoal,
+			tag_type tagPath,
+			typename Grid::tile_type &start = getRandomPos(grid),
+			typename Grid::tile_type &goal = getRandomPos(grid))
+		{
+			
 		}
 	};
-
-#pragma region Deserialization
-	
-	template <class T, class Generation>
-	void deserializeCategory(ifstream& file, string& line, Generation& gen)
-	{
-		while (getline(file, line) && line.find("#", 0) != 0)
-		{
-			if (line.empty()) continue;
-			auto t = make_unique<T>();
-			deserialize(line, t);
-			gen.add(move(t));
-		}
-	}
-
-	template<class Tile, class Rule = void, class Generation>
-	void deserialize(string filename, Generation& gen)
-	{
-		ifstream file{ filename };
-		if (file)
-		{
-			string line;
-			if (!getline(file, line)) return;
-
-			if (line.find("# Rules", 0) == 0)
-			{
-				deserializeCategory<Rule>(file, line, gen);
-			}
-
-			if (line.find("# Encoding", 0) == 0)
-			{
-				deserializeCategory<Tile>(file, line, gen);
-			}
-		}
-	}
-
-#pragma endregion
 }

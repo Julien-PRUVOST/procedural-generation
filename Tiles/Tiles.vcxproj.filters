@@ -44,6 +44,9 @@
     <ClInclude Include="ProceduralGeneration\Tile.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="ProceduralGeneration\deserializer.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Tuiles.txt">

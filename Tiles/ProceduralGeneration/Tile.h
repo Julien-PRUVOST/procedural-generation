@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -18,32 +17,4 @@ namespace ProceduralGeneration
 		vector<tile_element_type> externalRing {};
 		tile_element_type center {};
 	};
-
-
-#pragma region Deserialization
-
-	inline void deserialize(const string& line, unique_ptr<Tile>& tile)
-	{
-		istringstream input{ line };
-
-		string subLine;
-
-		getline(input, subLine, ' ');
-		tile->tag = subLine;
-
-		for (int i = 0; i < 6 && getline(input, subLine, ' '); ++i)
-		{
-			tile->constraintsRing.push_back(subLine[0]);
-		}
-
-		for (int i = 0; i < 6 && getline(input, subLine, ' '); ++i)
-		{
-			tile->externalRing.push_back(subLine[0]);
-		}
-
-		getline(input, subLine, ' ');
-		tile->center = subLine[0];
-	}
-
-#pragma endregion
 }

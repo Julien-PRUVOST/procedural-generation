@@ -2,17 +2,21 @@
 #include <random>
 #include <vector>
 #include <numeric>
+#include <memory>
 
 #include "ShinHexTile.h"
 
 namespace ProceduralGeneration {
+	using namespace std;
+
 	class HexGrid
 	{
+	public:
 		using coords_type = size_t;
 		using seed_type = int;
 		using mask_type = std::vector<bool>;
 
-		using tile_type = HexTile;
+		using tile_ptr = shared_ptr<HexTile>;
 
 	public:
 		HexGrid();
@@ -56,7 +60,7 @@ namespace ProceduralGeneration {
 		}
 
 	public:
-		std::vector<tile_type> grid;
+		std::vector<tile_ptr> grid;
 
 	public:
 		coords_type getGridWidth() const noexcept
@@ -69,6 +73,11 @@ namespace ProceduralGeneration {
 			return gridHeight;
 		}
 
+		coords_type getSize() const noexcept
+		{
+			return gridWidth * gridHeight;
+		}
+
 		bool getLayout(size_t index) const
 		{
 			return layout[index];
@@ -79,9 +88,24 @@ namespace ProceduralGeneration {
 			return getLayout(getIndex(i, j));
 		}
 
-		const tile_type* getTile(coords_type i, coords_type j) const
+		tile_ptr getTile(coords_type index)
 		{
-			return &grid[getIndex(i, j)];
+			return grid[index];
+		}
+
+		const tile_ptr getTile(coords_type index) const
+		{
+			return grid[index];
+		}
+
+		tile_ptr getTile(coords_type i, coords_type j)
+		{
+			return getTile(getIndex(i, j));
+		}
+
+		const tile_ptr getTile(coords_type i, coords_type j) const
+		{
+			return getTile(getIndex(i, j));
 		}
 
 		seed_type getSeed() const noexcept

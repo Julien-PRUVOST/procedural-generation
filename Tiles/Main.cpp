@@ -1,4 +1,6 @@
 #include <string>
+
+#include "ProceduralGeneration/deserializer.h"
 #include "ProceduralGeneration/Generation.h"
 #include "ProceduralGeneration/Tile.h"
 #include "ProceduralGeneration/Rule.h"
@@ -8,6 +10,9 @@ using namespace ProceduralGeneration;
 
 int main()
 {
-	Generation<HexGrid, Tile, Rule> gen;
-	deserialize<Tile, Rule>(string{ "Tuiles.txt" }, gen);
+	GenerationProcess<Tile, Rule> gen;
+	deserialize(string{ "Tuiles.txt" }, gen);
+
+	HexGrid grid{};
+	// gen.buildPath(grid, start, end, tagStart, tagEnd, tagPath);
 }
