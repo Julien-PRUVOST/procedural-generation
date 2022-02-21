@@ -4,17 +4,27 @@
 
 namespace ProceduralGeneration
 {
-	using namespace std;
-
 	class Pattern
 	{
 	public:
-		using tag_type = string;
+		using tag_type = std::string;
 		using element_type = char;
 
 		tag_type tag{};
-		vector<element_type> constraintsRing {};
-		vector<element_type> externalRing {};
+		std::vector<element_type> constraintsRing {};
+		std::vector<element_type> externalRing {};
 		element_type center {};
+
+		static std::vector<element_type> rotateRing(const std::vector<element_type> &ring, int n)
+		{
+			std::vector<element_type> rotatedRing;
+
+			for (size_t i = 0; i != ring.size(); ++i)
+			{
+				rotatedRing.push_back(ring[(i + n) % ring.size()]);
+			}
+
+			return rotatedRing;
+		}
 	};
 }

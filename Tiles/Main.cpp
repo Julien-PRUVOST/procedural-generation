@@ -2,17 +2,15 @@
 
 #include "ProceduralGeneration/deserializer.h"
 #include "ProceduralGeneration/Generation.h"
-#include "ProceduralGeneration/Tile.h"
-#include "ProceduralGeneration/Rule.h"
-#include "Hexagonal/Grid.h"
 
 using namespace ProceduralGeneration;
 
 int main()
 {
-	GenerationProcess<Tile, Rule> gen;
+	GenerationProcess gen;
 	deserialize(string{ "Tuiles.txt" }, gen);
 
-	HexGrid grid{};
-	// gen.buildPath(grid, start, end, tagStart, tagEnd, tagPath);
+	Hexagonal::Grid grid {};
+
+	gen.buildPath(grid, "River", "River", grid.getTile(0), grid.getTile(60), 'C');
 }

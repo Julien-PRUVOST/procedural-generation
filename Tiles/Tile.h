@@ -19,12 +19,13 @@ namespace ProceduralGenerationImplementation
 		vector<element_type> ring{};
 		element_type center{};
 
-		float angle = 0.0f;
+		int tileAngle = 0;
 		float size = 1.0f;
 
 	public:
 
-		Tile(Coord coords, float angle = 0.0f, float size = 1.0f) : coords{ coords }, angle{ angle }, size { size } {}
+		Tile(Coord coords, int tileAngle = 0, float size = 1.0f) : coords{ coords }, tileAngle{ tileAngle }, size { size }
+		{}
 
 #pragma region Getters
 		Coord::coord_type getR() const { return coords.r; }
@@ -35,26 +36,53 @@ namespace ProceduralGenerationImplementation
 
 		float getX() const { return Hexagonal::Math::getX(getQ(), getR(), getSize()); }
 		float getY() const { return Hexagonal::Math::getY(getQ(), getR(), getSize()); }
+		float getAngleDegrees() const { return Hexagonal::Math::getAngleDegrees(tileAngle); }
 #pragma endregion
 
 #pragma region Setters
-		void setRing(vector<element_type>& patternRing)
+		void setRing(const vector<element_type>& patternRing)
 		{
-			copy(patternRing.begin(), patternRing.end(), ring.begin());
+			ring.reserve(6);
+			copy(patternRing.begin(), patternRing.end(),  back_inserter(ring));
+		}
+
+		void addToRing(const vector<element_type>& patternRing)
+		{
+			if (ring.empty()) setRing(patternRing);
+			else
+			{
+				for (size_t i = 0; i != patternRing.size(); ++i)
+				{
+					if (patternRing[i] != element_type{} && ring[i] == element_type{})
+						ring[i] = patternRing[i];
+				}
+			}
 		}
 
 		void setCenter(element_type patternCenter)
 		{
 			center = patternCenter;
 		}
+
+		class bad_angle_exception : std::exception{};
+
+		/// Angle between 0 and 5
+		void setTileAngle(int newAngle)
+		{
+			if (0 <= newAngle && newAngle < 6) tileAngle = newAngle;
+			else throw bad_angle_exception{};
+		}
 #pragma endregion
 
-		float getAngle(const Tile &other) const
+		int getTileAngleTo(const Tile &other) const
 		{
-			return Hexagonal::Math::getAngle(getQ(), getR(), other.getQ(), other.getR(), getSize());
+			return Hexagonal::Math::getHexAngle(getQ(), getR(), other.getQ(), other.getR());
 		}
 
-		void rotate() {} // Todo : add that
+		static float getAngleDegrees(int hexAngle)
+		{
+			return Hexagonal::Math::getAngleDegrees(hexAngle);
+		}
 
 		bool operator==(const Tile &other) const
 		{

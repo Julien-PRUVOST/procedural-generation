@@ -5,7 +5,7 @@
 
 namespace ProceduralGeneration
 {
-	using namespace std;
+	using std::string;
 
 	inline bool decodeAsInt(const string& word, char& c, unsigned int& n)
 	{
@@ -22,9 +22,9 @@ namespace ProceduralGeneration
 	}
 
 	template <class Generation>
-	void deserialize(const string &line, typename Generation::rule_ptr &rule)
+	void deserialize(const string &line, typename Generation::rule_t &rule)
 	{
-		istringstream input{ line };
+		std::istringstream input{ line };
 
 		string subLine;
 		bool mask[3] = { true, true, true };
@@ -36,45 +36,45 @@ namespace ProceduralGeneration
 			mask[i] = decodeAsInt(subLine, params[i], n);
 		}
 
-		if (!mask[0] && mask[1] && mask[2]) rule->create(params[0], n);
-		if (!mask[0] && !mask[1] && mask[2]) rule->create(params[0], params[1], n);
-		if (!mask[0] && !mask[1] && !mask[2]) rule->create(params[0], params[1], params[2]);
+		if (!mask[0] && mask[1] && mask[2]) rule.create(params[0], n);
+		if (!mask[0] && !mask[1] && mask[2]) rule.create(params[0], params[1], n);
+		if (!mask[0] && !mask[1] && !mask[2]) rule.create(params[0], params[1], params[2]);
 	}
 
 
 	template <class Generation>
-	void deserialize(const string &line, typename Generation::tile_ptr &tile)
+	void deserialize(const string &line, typename Generation::pattern_t &tile)
 	{
-		istringstream input{ line };
+		std::istringstream input{ line };
 
 		string subLine;
 
 		getline(input, subLine, ' ');
-		tile->tag = subLine;
+		tile.tag = subLine;
 
 		for (int i = 0; i < 6 && getline(input, subLine, ' '); ++i)
 		{
-			tile->constraintsRing.push_back(subLine[0]);
+			tile.constraintsRing.push_back(subLine[0]);
 		}
 
 		for (int i = 0; i < 6 && getline(input, subLine, ' '); ++i)
 		{
-			tile->externalRing.push_back(subLine[0]);
+			tile.externalRing.push_back(subLine[0]);
 		}
 
 		getline(input, subLine, ' ');
-		tile->center = subLine[0];
+		tile.center = subLine[0];
 	}
 
 #pragma region Generation
 
 	template <class T, class Generation>
-	void deserializeCategory(ifstream& file, string& line, Generation& gen)
+	void deserializeCategory(std::ifstream& file, string& line, Generation& gen)
 	{
 		while (getline(file, line) && line.find("#", 0) != 0)
 		{
 			if (line.empty()) continue;
-			auto t = make_unique<T>();
+			T t;
 			deserialize<Generation>(line, t);
 			gen.add(std::move(t));
 		}
@@ -83,7 +83,7 @@ namespace ProceduralGeneration
 	template<class Generation>
 	void deserialize(string filename, Generation& gen)
 	{
-		ifstream file{ filename };
+		std::ifstream file{ filename };
 		if (file)
 		{
 			string line;
@@ -96,7 +96,7 @@ namespace ProceduralGeneration
 
 			if (line.find("# Encoding", 0) == 0)
 			{
-				deserializeCategory<Generation::tile_t>(file, line, gen);
+				deserializeCategory<Generation::pattern_t>(file, line, gen);
 			}
 		}
 	}

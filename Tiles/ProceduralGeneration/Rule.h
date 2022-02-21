@@ -1,12 +1,7 @@
 ﻿#pragma once
-#include <sstream>
-#include <string>
-#include <memory>
 
 namespace ProceduralGeneration
 {
-	using namespace std;
-
 	class Rule
 	{
 	public:

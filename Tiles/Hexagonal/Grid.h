@@ -19,7 +19,17 @@ namespace Hexagonal {
 		using mask_type = vector<bool>;
 
 	public:
-		Grid() = default;
+		Grid()
+		{
+			grid.reserve(getSize());
+			for (size_t i = 0; i != getHeight(); ++i)
+			{
+				for (size_t j = 0; j != getWidth(); ++j)
+				{
+					grid[getIndex(i, j)] = std::make_shared<tile_type>(Coord::getCoord(i, j));
+				}
+			}
+		}
 
 	private:
 		size_type width = 17;
@@ -122,7 +132,7 @@ namespace Hexagonal {
 #pragma region Relationships
 		vector<size_type> getNeighborsIndex(size_type index)
 		{
-			vector<size_type> v{ 6 };
+			vector<size_type> v{};
 
 			size_t i = getI(index);
 			size_t j = getJ(index);
