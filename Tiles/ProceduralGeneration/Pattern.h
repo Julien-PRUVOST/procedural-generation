@@ -6,15 +6,15 @@ namespace ProceduralGeneration
 {
 	using namespace std;
 
-	class Tile
+	class Pattern
 	{
 	public:
 		using tag_type = string;
-		using tile_element_type = char;
+		using element_type = char;
 
 		tag_type tag{};
-		vector<tile_element_type> constraintsRing {};
-		vector<tile_element_type> externalRing {};
-		tile_element_type center {};
+		vector<element_type> constraintsRing {};
+		vector<element_type> externalRing {};
+		element_type center {};
 	};
 }

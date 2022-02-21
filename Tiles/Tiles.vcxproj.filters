@@ -13,39 +13,45 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\Hexagonal">
+      <UniqueIdentifier>{0e2e0b2d-1c84-4d5c-a398-144089368d11}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ProceduralGeneration">
+      <UniqueIdentifier>{a023224b-ccb0-4809-a52c-1dbb01a3f084}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ProceduralGeneration\ShinHexGrid.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ProceduralGeneration\ShinHexTile.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ProceduralGeneration\hex-coords.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ProceduralGeneration\ShinHexGrid.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ProceduralGeneration\ShinHexTile.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="ProceduralGeneration\deserializer.h">
+      <Filter>Source Files\ProceduralGeneration</Filter>
     </ClInclude>
     <ClInclude Include="ProceduralGeneration\Generation.h">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\ProceduralGeneration</Filter>
     </ClInclude>
     <ClInclude Include="ProceduralGeneration\Rule.h">
+      <Filter>Source Files\ProceduralGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="ProceduralGeneration\Pattern.h">
+      <Filter>Source Files\ProceduralGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="Hexagonal\Coord.h">
+      <Filter>Source Files\Hexagonal</Filter>
+    </ClInclude>
+    <ClInclude Include="Hexagonal\Grid.h">
+      <Filter>Source Files\Hexagonal</Filter>
+    </ClInclude>
+    <ClInclude Include="Tile.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="ProceduralGeneration\Tile.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="Hexagonal\Math.h">
+      <Filter>Source Files\Hexagonal</Filter>
     </ClInclude>
-    <ClInclude Include="ProceduralGeneration\deserializer.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="ProceduralGeneration\Math.h">
+      <Filter>Source Files\ProceduralGeneration</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

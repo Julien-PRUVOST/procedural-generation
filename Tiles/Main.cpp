@@ -4,7 +4,7 @@
 #include "ProceduralGeneration/Generation.h"
 #include "ProceduralGeneration/Tile.h"
 #include "ProceduralGeneration/Rule.h"
-#include "ProceduralGeneration/ShinHexGrid.h"
+#include "Hexagonal/Grid.h"
 
 using namespace ProceduralGeneration;
 

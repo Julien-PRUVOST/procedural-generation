@@ -140,18 +140,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ProceduralGeneration\ShinHexGrid.cpp" />
-    <ClCompile Include="ProceduralGeneration\ShinHexTile.cpp" />
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Hexagonal\Coord.h" />
+    <ClInclude Include="Hexagonal\Grid.h" />
+    <ClInclude Include="Hexagonal\Math.h" />
     <ClInclude Include="ProceduralGeneration\deserializer.h" />
     <ClInclude Include="ProceduralGeneration\Generation.h" />
-    <ClInclude Include="ProceduralGeneration\hex-coords.h" />
+    <ClInclude Include="ProceduralGeneration\Math.h" />
     <ClInclude Include="ProceduralGeneration\Rule.h" />
-    <ClInclude Include="ProceduralGeneration\ShinHexGrid.h" />
-    <ClInclude Include="ProceduralGeneration\ShinHexTile.h" />
-    <ClInclude Include="ProceduralGeneration\Tile.h" />
+    <ClInclude Include="ProceduralGeneration\Pattern.h" />
+    <ClInclude Include="Tile.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="Tuiles.txt" />
