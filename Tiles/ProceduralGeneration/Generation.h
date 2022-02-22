@@ -100,24 +100,35 @@ namespace ProceduralGeneration
 
 			for (float angle: angles)
 			{
-				relativeAngles.push_back(Math::getAngularDistance(referenceAngle, angle, 360.0f));
+				relativeAngles.push_back(Math::getAngularDifference(angle, referenceAngle, 360.0f));
 			}
 
 			return relativeAngles;
 		}
 
-		void filterNeighbors(vector<typename Grid::tile_ptr> &neighbors, vector<float>& angles, vector<float>& relativeAngles, float threshold = 2 * static_cast<float>(std::_Pi))
+		void filterNeighbors(vector<typename Grid::tile_ptr> &neighbors, vector<float>& angles, vector<float>& relativeAngles, float threshold = 360.0f)
 		{
-			for (auto p = neighbors.rbegin(); p != neighbors.rend(); ++p)
+			vector<size_t> toErase;
+			for (size_t i = 0; i != neighbors.size(); ++i)
 			{
-				if(relativeAngles[std::distance(neighbors.rbegin(), p)] > threshold)
-				{
-					angles.erase((angles.rbegin() + std::distance(neighbors.rbegin(), p)).base());
-					relativeAngles.erase((relativeAngles.rbegin() + std::distance(neighbors.rbegin(), p)).base());
-
-					neighbors.erase(p.base());
-				}
+				if (std::abs(relativeAngles[i]) > threshold) toErase.push_back(i);
 			}
+
+			for(auto p = toErase.rbegin(); p != toErase.rend(); ++p)
+			{
+				auto it_Angles = angles.begin();
+				std::advance(it_Angles, *p);
+				angles.erase(it_Angles);
+
+				auto it_relativeAngles = relativeAngles.begin();
+				std::advance(it_relativeAngles, *p);
+				relativeAngles.erase(it_relativeAngles);
+
+				auto it_neighbors = neighbors.begin();
+				std::advance(it_neighbors, *p);
+				neighbors.erase(it_neighbors);
+			}
+			
 		}
 
 		auto getTileProbability(vector<typename Grid::tile_ptr> &pool, const vector<float> &relativeAngles)
@@ -130,13 +141,13 @@ namespace ProceduralGeneration
 			{
 				for (size_t j = i; j != relativeAngles.size(); ++j)
 				{
-					range = std::max(range, Math::getAngularDistance(relativeAngles[i], relativeAngles[j]));
+					range = std::max(range, std::abs(Math::getAngularDifference(relativeAngles[i], relativeAngles[j])));
 				}
 			}
 
 			for (size_t i = 0; i != relativeAngles.size(); ++i)
 			{
-				probability.push_back((range - relativeAngles[i]) / (range * (static_cast<float>(relativeAngles.size()) - 1)));
+				probability.push_back((range - std::abs(relativeAngles[i])) / (range * (static_cast<float>(relativeAngles.size()) - 1)));
 			}
 
 			return probability;
@@ -149,10 +160,10 @@ namespace ProceduralGeneration
 			// Todo : Wierd to have two angles at 180°
 			vector<float> angles = getAngles(current, neighbors);
 
-			const float referenceAngle = Grid::tile_type::getAngleDegrees(current.getTileAngleTo(goal));
+			const float referenceAngle = current.getAngleDegrees(goal);
 			vector<float> relativeAngles = getRelativeAngles(referenceAngle, angles);
 
-			filterNeighbors(neighbors, angles, relativeAngles, 180.0f);
+			filterNeighbors(neighbors, angles, relativeAngles, 90.0f);
 
 			vector<float> probability = getTileProbability(neighbors, relativeAngles);
 
@@ -204,25 +215,25 @@ namespace ProceduralGeneration
 			pattern_t &pattern = getPattern(tagStart);
 			setPatternAt(pattern, start);
 
-			typename Grid::tile_type current = start;
+			typename Grid::tile_type* current = &start;
 
-			while (current != goal)
+			while (*current != goal)
 			{
-				typename Grid::tile_type next = getNextTileInPath(grid, current, goal);
+				typename Grid::tile_type* next = &getNextTileInPath(grid, *current, goal);
 
-				current.setCenter(element);
+				current->setCenter(element);
 
-				int angleToNext = current.getTileAngleTo(next);
+				int angleToNext = current->getTileAngleTo(*next);
 
 				// Should be a ring of variable size depending on the grid
 				vector<pattern_t::element_type> ring{ element, {}, {}, {}, {}, {} };
 
 				ring = Pattern::rotateRing(ring, angleToNext);
 
-				current.addToRing(ring);
+				current->addToRing(ring);
 
-				next.setCenter(element);
-				next.addToRing(Pattern::rotateRing(ring, 3));
+				next->setCenter(element);
+				next->addToRing(Pattern::rotateRing(ring, 3));
 
 				current = next;
 			}

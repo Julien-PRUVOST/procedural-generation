@@ -12,5 +12,5 @@ int main()
 
 	Hexagonal::Grid grid {};
 
-	gen.buildPath(grid, "River", "River", grid.getTile(0), grid.getTile(60), 'C');
+	gen.buildPath(grid, "River", "River", grid.getTile(0), grid.getTile(60), 'R');
 }

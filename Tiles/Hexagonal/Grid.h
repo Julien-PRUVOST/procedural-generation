@@ -137,19 +137,30 @@ namespace Hexagonal {
 			size_t i = getI(index);
 			size_t j = getJ(index);
 
-			size_t west = index + 1;
-			size_t south_west = index + getWidth() + !(i % 2);
-			size_t south_east = index + getWidth() - (i % 2);
-			size_t east = index - 1;
-			size_t north_east = index - getWidth() - (i % 2);
-			size_t north_west = index - getWidth() + !(i % 2);
+			bool evenRow = i % 2 == 0;
 
-			if (isValidIndex(west)) v.push_back(west);
-			if (isValidIndex(south_west)) v.push_back(south_west);
-			if (isValidIndex(south_east)) v.push_back(south_east);
-			if (0 < i && isValidIndex(east)) v.push_back(east);
-			if (0 < i && 0 < j < index && isValidIndex(north_east)) v.push_back(north_east);
-			if (0 < i && isValidIndex(north_west)) v.push_back(north_west);
+			bool eastLimit = 0 == j;
+			bool westLimit = j == getWidth() - 1;
+			bool northLimit = 0 == i;
+			bool southLimit = i == getHeight() - 1;
+			bool southEastLimit = southLimit || (evenRow && eastLimit);
+			bool southWestLimit = southLimit || (!evenRow && westLimit);
+			bool northEastLimit = northLimit || (evenRow && eastLimit);
+			bool northWestLimit = northLimit || (!evenRow && westLimit);
+
+			size_t west = index + 1;
+			size_t south_west = index + getWidth() + !evenRow;
+			size_t south_east = index + getWidth() - evenRow;
+			size_t east = index - 1;
+			size_t north_east = index - getWidth() - evenRow;
+			size_t north_west = index - getWidth() + !evenRow;
+
+			if (!westLimit) v.push_back(west);
+			if (!southWestLimit) v.push_back(south_west);
+			if (!southEastLimit) v.push_back(south_east);
+			if (!eastLimit) v.push_back(east);
+			if (!northEastLimit) v.push_back(north_east);
+			if (!northWestLimit) v.push_back(north_west);
 
 			return v;
 		}

@@ -79,6 +79,11 @@ namespace ProceduralGenerationImplementation
 			return Hexagonal::Math::getHexAngle(getQ(), getR(), other.getQ(), other.getR());
 		}
 
+		float getAngleDegrees(const Tile& other)
+		{
+			return Hexagonal::Math::getAngleDegrees(getQ(), getR(), other.getQ(), other.getR());
+		}
+
 		static float getAngleDegrees(int hexAngle)
 		{
 			return Hexagonal::Math::getAngleDegrees(hexAngle);

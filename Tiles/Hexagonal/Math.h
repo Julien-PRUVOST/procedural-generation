@@ -29,13 +29,19 @@ namespace Hexagonal
 		static int getHexAngle(int q0, int r0, int q1, int r1)
 		{
 			float radAngle = atan2(getY(q1, r1, 1.0f) - getY(q0, r0, 1.0f), getX(q1, r1, 1.0f) - getX(q0, r0, 1.0f));
-			float conversion = radAngle / (2 * static_cast<float>(std::_Pi) / 6.0f) + 3;
-			return static_cast<int>(conversion) ;
+			int conversion = std::lround(radAngle / (static_cast<float>(std::_Pi) / 3.0f));
+			return (conversion + 6) % 6;
 		}
 
 		static constexpr float getAngleDegrees(int hexAngle)
 		{
 			return static_cast<float>(hexAngle) * 60.0f;
+		}
+
+		static float getAngleDegrees(int q0, int r0, int q1, int r1)
+		{
+			float radAngle = atan2(getY(q1, r1, 1.0f) - getY(q0, r0, 1.0f), getX(q1, r1, 1.0f) - getX(q0, r0, 1.0f));
+			return radAngle / (2 * static_cast<float>(std::_Pi)) * 360.0f;
 		}
 		
 	};
