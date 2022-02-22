@@ -157,7 +157,6 @@ namespace ProceduralGeneration
 		{
 			vector<typename Grid::tile_ptr> neighbors =  grid.getNeighbors(current);
 
-			// Todo : Wierd to have two angles at 180°
 			vector<float> angles = getAngles(current, neighbors);
 
 			const float referenceAngle = current.getAngleDegrees(goal);
@@ -227,9 +226,9 @@ namespace ProceduralGeneration
 
 				// Should be a ring of variable size depending on the grid
 				vector<pattern_t::element_type> ring{ element, {}, {}, {}, {}, {} };
-
 				ring = Pattern::rotateRing(ring, angleToNext);
 
+				// TODO : Should select a tile in the pool
 				current->addToRing(ring);
 
 				next->setCenter(element);
