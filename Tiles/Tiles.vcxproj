@@ -146,6 +146,7 @@
     <ClInclude Include="Hexagonal\Coord.h" />
     <ClInclude Include="Hexagonal\Grid.h" />
     <ClInclude Include="Hexagonal\Math.h" />
+    <ClInclude Include="printer.h" />
     <ClInclude Include="ProceduralGeneration\deserializer.h" />
     <ClInclude Include="ProceduralGeneration\Generation.h" />
     <ClInclude Include="ProceduralGeneration\Rule.h" />

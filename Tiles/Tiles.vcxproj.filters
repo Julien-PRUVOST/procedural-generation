@@ -59,6 +59,9 @@
     <ClInclude Include="ShinMathLib\VectorMath.h">
       <Filter>Source Files\ShinMathLib</Filter>
     </ClInclude>
+    <ClInclude Include="printer.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Tuiles.txt">

@@ -1,5 +1,6 @@
 #include <string>
 
+#include "printer.h"
 #include "ProceduralGeneration/deserializer.h"
 #include "ProceduralGeneration/Generation.h"
 
@@ -12,5 +13,8 @@ int main()
 
 	Hexagonal::Grid grid {};
 
-	gen.buildPath(grid, "RiverEnd", "RiverEnd", "River", grid.getTile(0), grid.getTile(60), 'R');
+	grid.clear();
+
+	gen.buildPath(grid, "RiverEnd", "RiverEnd", "River", grid.getValidTile(0), grid.getValidTile(140), 'R');
+	printer::print("output.txt", grid);
 }

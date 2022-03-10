@@ -145,6 +145,19 @@ namespace Hexagonal {
 			return getTile(i - 1);
 		}
 
+		vector<tile_ptr> getTiles()
+		{
+			return grid;
+		}
+
+		void clear()
+		{
+			for (auto tile : grid)
+			{
+				tile->erase();
+			}
+		}
+
 
 #pragma region Validation
 		/**
