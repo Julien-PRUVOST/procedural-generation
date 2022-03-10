@@ -1,14 +1,18 @@
-RiverEnd R 0 0 0 0 0, R 0 0 0 0 0, R, 5
+# Default
+. 0
 
-River R R 0 0 0 0, R R 0 0 0 0, R, 2
-River R 0 R 0 0 0, R 0 R 0 0 0, R, 2
-River R 0 0 R 0 0, R 0 0 R 0 0, R, 2
+# Encoding
+RiverEnd R . . . . ., R . . . . ., R, 5
 
-River R R 0 0 0 0, R R 0 0 0 0, 0, 3
-River R 0 R 0 0 0, R R R 0 0 0, 0, 3
-River R 0 0 R 0 0, R R R R 0 0, 0, 1
-River R 0 0 0 R 0, R R R R R 0, 0, 1
+River R R . . . ., R R . . . ., R, 2
+River R . R . . ., R . R . . ., R, 2
+River R . . R . ., R . . R . ., R, 2
 
-Mine 0 0 0 0 0 0, M M M M 0 0, M, 2 3
-Campfire 0 0 0 0 0 0, C 0 0 0 0 0, F, 3
-Building C 0 0 0 0 0, B B B B B B, B, 1
+River R R . . . ., R R . . . ., ., 3
+River R . R . . ., R R R . . ., ., 3
+River R . . R . ., R R R R . ., ., 1
+River R . . . R ., R R R R R ., ., 1
+
+Mine . . . . . ., M M M M . ., M, 2 3
+Campfire . . . . . ., C . . . . ., F, 3
+Building C . . . . ., B B B B B B, B, 1

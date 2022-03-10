@@ -8,10 +8,10 @@
 
 namespace printer
 {
-	inline void print(std::ostream& os, ProceduralGeneration::element_t element, ProceduralGeneration::element_t default_appearance = '.')
-	{
-		os << (element == ProceduralGeneration::element_t{} || element == '0' ? default_appearance : element);
-	}
+	template <class T>
+	void print(std::ostream& os, const ProceduralGen::Element<T>& element, const T& defaultDisplay = '.') {
+		os << (element.isDefault() ? defaultDisplay : element.value());
+	};
 
 	inline void print(std::ostream& os, Hexagonal::Grid &grid)
 	{

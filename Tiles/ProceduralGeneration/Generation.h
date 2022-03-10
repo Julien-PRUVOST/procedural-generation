@@ -13,20 +13,21 @@
 #include "../Hexagonal/Grid.h"
 
 
-namespace ProceduralGeneration
+namespace ProceduralGen
 {
 	using std::vector;
 	using namespace shinmathlib;	
 
 	using Grid = Hexagonal::Grid;
 
+	template <class Pattern = Pattern<Element<char>>>
 	class GenerationProcess
 	{
 	public:
 		using pattern_t = Pattern;
 		using pattern_ptr = std::shared_ptr<pattern_t>;
 
-		using tag_type = pattern_t::tag_t;
+		using tag_type = typename pattern_t::tag_t;
 
 		using seed_type = int;
 
@@ -252,7 +253,7 @@ namespace ProceduralGeneration
 		class interrupted : public std::exception {};
 
 		void buildPathIteration(Grid& grid, Grid::tile_ptr& current, const Grid::tile_ptr& start, const Grid::tile_ptr& goal,
-			const tag_type& tagPath, const tag_type& tagStart, const tag_type& tagGoal, const element_t &linkingElement,
+			const tag_type& tagPath, const tag_type& tagStart, const tag_type& tagGoal, const Grid::tile_type::pattern_t::element_t &linkingElement,
 			vector<Grid::tile_ptr>& visited,
 			const std::function<bool(const Grid::tile_ptr&)> &stopCondition)
 		{
@@ -286,7 +287,7 @@ namespace ProceduralGeneration
 
 	public:
 
-		void buildPath(Grid& grid, tag_type tagStart, tag_type tagGoal, tag_type tagPath, Grid::tile_ptr start, Grid::tile_ptr goal, element_t linkingElement,
+		void buildPath(Grid& grid, tag_type tagStart, tag_type tagGoal, tag_type tagPath, Grid::tile_ptr start, Grid::tile_ptr goal, Grid::tile_type::pattern_t::element_t linkingElement,
 			std::function<bool(const Grid::tile_ptr&)> stopCondition = falseCondition)
 		{
 			vector<Grid::tile_ptr> visited;
@@ -307,7 +308,7 @@ namespace ProceduralGeneration
 			getAndApplyPattern(current, start, goal, tagPath, tagStart, tagGoal);
 		}
 
-		void buildPath(Grid& grid, tag_type tagStart, tag_type tagGoal, tag_type tagPath, element_t linkingElement,
+		void buildPath(Grid& grid, tag_type tagStart, tag_type tagGoal, tag_type tagPath, Grid::tile_type::pattern_t::element_t linkingElement,
 			Grid::tile_ptr start = nullptr, Grid::tile_ptr goal = nullptr,
 			std::function<bool(const Grid::tile_ptr&)> startCondition = trueCondition,
 			std::function<bool(const Grid::tile_ptr&)> stopCondition = falseCondition,
@@ -339,7 +340,7 @@ namespace ProceduralGeneration
 			return pattern;
 		}
 
-		void buildRiverIteration(Grid& grid, Grid::tile_ptr& current, const tag_type& tag, const element_t& linkingElement,
+		void buildRiverIteration(Grid& grid, Grid::tile_ptr& current, const tag_type& tag, const Grid::tile_type::pattern_t::element_t& linkingElement,
 			size_t& currentRiverSize, vector<Grid::tile_ptr>& visited)
 		{
 			visited.push_back(current);
@@ -366,14 +367,14 @@ namespace ProceduralGeneration
 
 			const pattern_t pattern = getAndApplyPattern(current, tag);
 
-			currentRiverSize += static_cast<size_t>(pattern.center != '0');
-			currentRiverSize += VectorMath::count_if(pattern.externalRing, [](const element_t& element) { return element != '0'; });
+			currentRiverSize += static_cast<size_t>(!pattern.center.isDefault());
+			currentRiverSize += VectorMath::count_if(pattern.externalRing, [](const Grid::tile_type::pattern_t::element_t& element) { return !element.isDefault(); });
 
 			current = next;
 		}
 
 	public:
-		void buildRiver(Grid& grid, tag_type tagStart, tag_type tagEnd, tag_type tagRiver, Grid::tile_ptr start, element_t linkingElement, size_t riverMinLength)
+		void buildRiver(Grid& grid, tag_type tagStart, tag_type tagEnd, tag_type tagRiver, Grid::tile_ptr start, Grid::tile_type::pattern_t::element_t linkingElement, size_t riverMinLength)
 		{
 			vector<Grid::tile_ptr> visited;
 
@@ -398,7 +399,7 @@ namespace ProceduralGeneration
 			getAndApplyPattern(current, tagEnd);
 		}
 
-		void buildRiver(Grid& grid, tag_type tagStart, tag_type tagGoal, tag_type tagRiver, element_t linkingElement, size_t riverMinLength)
+		void buildRiver(Grid& grid, tag_type tagStart, tag_type tagGoal, tag_type tagRiver, Grid::tile_type::pattern_t::element_t linkingElement, size_t riverMinLength)
 		{
 			Grid::tile_ptr start = getRandomValidPos(grid);
 			buildRiver(grid, std::move(tagStart), std::move(tagGoal), std::move(tagRiver), start, linkingElement, riverMinLength);

@@ -8,11 +8,12 @@ namespace ProceduralGenerationImplementation
 	using namespace std;
 
 	// template<class Coord>
+	template <class Pattern>
 	class Tile
 	{
 	public:
 		using Coord = Hexagonal::Coord; // Remove for template
-		using pattern_t = ProceduralGeneration::Pattern;
+		using pattern_t = Pattern;
 		using tag_type = std::string;
 	
 	private:
@@ -70,7 +71,7 @@ namespace ProceduralGenerationImplementation
 			tags.push_back(newPattern.tag);
 		}
 
-		void setContraintTo(const Tile& other, ProceduralGeneration::element_t element)
+		void setContraintTo(const Tile& other, typename pattern_t::element_t element)
 		{
 			const size_t angle = getTileAngleTo(other);
 			pattern.constraintsRing[angle] = element;

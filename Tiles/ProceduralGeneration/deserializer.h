@@ -3,7 +3,7 @@
 #include <sstream>
 #include <string>
 
-namespace ProceduralGeneration
+namespace ProceduralGen
 {
 	using std::string;
 
@@ -51,12 +51,29 @@ namespace ProceduralGeneration
 		tile.weight = static_cast<size_t>(n);
 	}
 
+	template <class T>
+	void deserializeDefaultElements(std::ifstream& file, string& line)
+	{
+		while (getline(file, line) && line.find('#', 0) != 0)
+		{
+			if (line.empty()) continue;
+
+			std::istringstream input{ line };
+			string subLine;
+
+			while (std::getline(input, subLine, ' '))
+			{
+				Element<T>::addDefaultValue(T{ subLine[0] });
+			}
+		}
+	}
+
 #pragma region Generation
 
 	template <class T, class Generation>
 	void deserializeCategory(std::ifstream& file, string& line, Generation& gen)
 	{
-		while (getline(file, line) && line.find("#", 0) != 0)
+		while (getline(file, line) && line.find('#', 0) != 0)
 		{
 			if (line.empty()) continue;
 			T t;
@@ -68,15 +85,22 @@ namespace ProceduralGeneration
 	template<class Generation>
 	void deserialize(string filename, Generation& gen)
 	{
-		std::string s = "MyUniqueFileTalkingAboutPengouins.txt";
-		std::ofstream f{ s };
-
 		std::ifstream file{ filename };
 		if (file)
 		{
 			string line;
 
-			deserializeCategory<Generation::pattern_t>(file, line, gen);
+			if (!getline(file, line)) return;
+
+			if (line.find("# Default", 0) == 0)
+			{
+				deserializeDefaultElements<char>(file, line);
+			}
+
+			if (line.find("# Encoding", 0) == 0)
+			{
+				deserializeCategory<Generation::pattern_t>(file, line, gen);
+			}
 		}
 	}
 #pragma endregion

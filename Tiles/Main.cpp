@@ -4,12 +4,12 @@
 #include "ProceduralGeneration/deserializer.h"
 #include "ProceduralGeneration/Generation.h"
 
-using namespace ProceduralGeneration;
+using namespace ProceduralGen;
 
 int main()
 {
-	GenerationProcess gen;
-	deserialize(string{ "Tuiles.txt" }, gen);
+	GenerationProcess<Pattern<Element<char>>> gen;
+	deserialize(std::string{ "Tuiles.txt" }, gen);
 
 	Hexagonal::Grid grid {};
 

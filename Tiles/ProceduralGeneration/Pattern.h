@@ -3,12 +3,14 @@
 #include <vector>
 #include "Element.h"
 
-namespace ProceduralGeneration
+namespace ProceduralGen
 {
+	template<class T = Element<>>
 	class Pattern
 	{
 	public:
 		using tag_t = std::string;
+		using element_t = T;
 
 		using ring_t = std::vector<element_t>;
 
@@ -36,7 +38,7 @@ namespace ProceduralGeneration
 		{
 			for (size_t i = 0; i != ring.size(); ++i)
 			{
-				if (!Element::compatible(ring[i], otherRing[i])) return false;
+				if (!ring[i].compatible(otherRing[i])) return false;
 			}
 			return true;
 		}
@@ -58,7 +60,7 @@ namespace ProceduralGeneration
 		/// If true, change the angle to make the rings match. \n If false, leave the angle as it was. 
 		bool compatible(const element_t& otherCenter, const ring_t& otherExternalRing, const ring_t& otherConstraintRing, size_t& angle) const
 		{
-			if (!Element::compatible(center, otherCenter)) return false;
+			if (!center.compatible(otherCenter)) return false;
 
 			for (size_t iAngle = 0; iAngle != otherExternalRing.size(); ++iAngle)
 			{
@@ -81,7 +83,7 @@ namespace ProceduralGeneration
 
 			for (size_t i = 0; i != ring.size(); ++i)
 			{
-				outputRing.push_back(Element::merge(ring[i], otherRing[i]));
+				outputRing.push_back(ProceduralGen::merge(ring[i], otherRing[i]));
 			}
 
 			return outputRing;
@@ -96,7 +98,7 @@ namespace ProceduralGeneration
 
 		void merge(const Pattern& other, const size_t& angle)
 		{
-			center = Element::merge(center, other.center);
+			center = ProceduralGen::merge(center, other.center);
 			externalRing = merge(externalRing, rotateRing(other.externalRing, angle));
 			constraintsRing = merge(constraintsRing, rotateRing(other.constraintsRing, angle));
 		}

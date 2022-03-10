@@ -7,7 +7,7 @@
 namespace Hexagonal {
 	using namespace std;
 
-	using Tile = ProceduralGenerationImplementation::Tile;
+	using Tile = ProceduralGenerationImplementation::Tile<ProceduralGen::Pattern<ProceduralGen::Element<char>>>;
 	// template <class Tile>
 	class Grid
 	{
