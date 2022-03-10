@@ -37,6 +37,50 @@ namespace shinmathlib {
 			return std::next(v.begin(), chooseIndex(probability, prng));
 		}
 
+		template<class T, class Iterator>
+		auto getIndex(const std::vector<T>& v, Iterator &p)
+		{
+			return std::distance(v.begin, p);
+		}
+
+		// Use find instead if you need the iterator index
+		template<class T>
+		bool contains(const std::vector<T>& v, T& element)
+		{
+			return std::find(v.begin(), v.end(), element) != v.end();
+		}
+
+		template<class T, class Iterator>
+		bool containsAll(const std::vector<T>& v, Iterator begin, Iterator end)
+		{
+			if (begin == end) return true;
+			return contains(v, *begin) && containsAll(v, begin + 1, end);
+		}
+
+		template<class T>
+		bool containsAll(const std::vector<T>& v, std::vector<T>& elements)
+		{
+			return containsAll(v, elements.begin(), elements.end());
+		}
+
+		template<class T, class Iterator>
+		bool containsAny(const std::vector<T>& v, Iterator begin, Iterator end)
+		{
+			if (begin == end) return false;
+			return contains(v, *begin) || containsAll(v, begin + 1, end);
+		}
+
+		template<class T>
+		bool containsAny(const std::vector<T>& v, std::vector<T>& elements)
+		{
+			return containsAny(v, elements.begin(), elements.end());
+		}
+
+		template<class T>
+		auto find(const std::vector<T>& v, T& element)
+		{
+			return std::find(v.begin(), v.end(), element);
+		}
 
 		/// Assuming each element can only appear once
 		template <class T>
@@ -44,7 +88,7 @@ namespace shinmathlib {
 		{
 			for (auto p = elements.begin(); p != elements.end(); ++p)
 			{
-				auto finder = std::find(v.begin(), v.end(), *p);
+				auto finder = find(v, *p);
 				if (finder != v.end())
 				{
 					v.erase(finder);

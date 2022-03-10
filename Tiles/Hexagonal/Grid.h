@@ -121,6 +121,18 @@ namespace Hexagonal {
 			return validTileSize;
 		}
 
+		vector<tile_ptr> getValidTiles() const
+		{
+			vector<tile_ptr> validTiles;
+
+			for (size_type i = 0; i != getSize(); ++i)
+			{
+				if (getLayout(i)) validTiles.push_back(getTile(i));
+			}
+
+			return validTiles;
+		}
+
 		tile_ptr getValidTile(size_t index) const
 		{
 			size_t count = -1;

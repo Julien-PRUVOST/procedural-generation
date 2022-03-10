@@ -4,6 +4,7 @@
 #include <random>
 #include <utility>
 #include <vector>
+#include <functional>
 
 // Todo : remove those includes
 #include "../ShinMathLib/Math.h"
@@ -31,6 +32,9 @@ namespace ProceduralGeneration
 		using tag_type = pattern_t::tag_t;
 
 		using seed_type = int;
+
+		static bool trueCondition(const Grid::tile_ptr&) { return true; }
+		static bool falseCondition(const Grid::tile_ptr&) { return false; }
 
 	private:
 		vector<rule_t> rules {};
@@ -91,10 +95,18 @@ namespace ProceduralGeneration
 			return grid.getTile(index);
 		}
 
-		Grid::tile_ptr getRandomValidPos(Grid& grid)
+		Grid::tile_ptr getRandomValidPos(Grid& grid,
+			const std::function<bool(const Grid::tile_ptr&)>& condition = trueCondition)
 		{
-			const size_t index = VectorMath::chooseIndex(grid.getValidTileSize(), prng);
-			return grid.getValidTile(index);
+			const vector<Grid::tile_ptr> validTiles = grid.getValidTiles();
+			vector<Grid::tile_ptr> pool{};
+			for (const auto & tile : validTiles)
+			{
+				if (condition(tile))
+					pool.push_back(tile);
+			}
+			const size_t index = VectorMath::chooseIndex(pool.size(), prng);
+			return pool[index];
 		}
 
 		vector<pattern_t>& getPatterns(const tag_type& tag)
@@ -250,7 +262,8 @@ namespace ProceduralGeneration
 
 		void buildPathIteration(Grid& grid, Grid::tile_ptr& current, const Grid::tile_ptr& start, const Grid::tile_ptr& goal,
 			const tag_type& tagPath, const tag_type& tagStart, const tag_type& tagGoal, const element_t &linkingElement,
-			vector<Grid::tile_ptr>& visited)
+			vector<Grid::tile_ptr>& visited,
+			const std::function<bool(const Grid::tile_ptr&)> &stopCondition)
 		{
 			visited.push_back(current);
 
@@ -276,11 +289,14 @@ namespace ProceduralGeneration
 			getAndApplyPattern(current, start, goal, tagPath, tagStart, tagGoal);
 
 			current = next;
+
+			if (stopCondition(current)) throw interrupted{};
 		}
 
 	public:
 
-		void buildPath(Grid& grid, tag_type tagStart, tag_type tagGoal, tag_type tagPath, Grid::tile_ptr start, Grid::tile_ptr goal, element_t linkingElement)
+		void buildPath(Grid& grid, tag_type tagStart, tag_type tagGoal, tag_type tagPath, Grid::tile_ptr start, Grid::tile_ptr goal, element_t linkingElement,
+			std::function<bool(const Grid::tile_ptr&)> stopCondition = falseCondition)
 		{
 			vector<Grid::tile_ptr> visited;
 
@@ -290,7 +306,7 @@ namespace ProceduralGeneration
 			{
 				try
 				{
-					buildPathIteration(grid, current, start, goal, tagPath, tagStart, tagGoal, linkingElement, visited);
+					buildPathIteration(grid, current, start, goal, tagPath, tagStart, tagGoal, linkingElement, visited, stopCondition);
 				}
 				catch (interrupted)
 				{
@@ -300,11 +316,15 @@ namespace ProceduralGeneration
 			getAndApplyPattern(current, start, goal, tagPath, tagStart, tagGoal);
 		}
 
-		void buildPath(Grid& grid, tag_type tagStart, tag_type tagGoal, tag_type tagPath, element_t linkingElement)
+		void buildPath(Grid& grid, tag_type tagStart, tag_type tagGoal, tag_type tagPath, element_t linkingElement,
+			Grid::tile_ptr start = nullptr, Grid::tile_ptr goal = nullptr,
+			std::function<bool(const Grid::tile_ptr&)> startCondition = trueCondition,
+			std::function<bool(const Grid::tile_ptr&)> stopCondition = falseCondition,
+			std::function<bool(const Grid::tile_ptr&)> goalCondition = trueCondition)
 		{
-			Grid::tile_ptr start = getRandomValidPos(grid);
-			Grid::tile_ptr goal = getRandomValidPos(grid);
-			buildPath(grid, std::move(tagStart), std::move(tagGoal), std::move(tagPath), start, goal, linkingElement);
+			if (!start) start = getRandomValidPos(grid, startCondition);
+			if (!goal) goal = getRandomValidPos(grid, goalCondition);
+			buildPath(grid, std::move(tagStart), std::move(tagGoal), std::move(tagPath), start, goal, linkingElement, std::move(stopCondition));
 		}
 #pragma endregion
 

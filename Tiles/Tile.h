@@ -13,20 +13,25 @@ namespace ProceduralGenerationImplementation
 	public:
 		using Coord = Hexagonal::Coord; // Remove for template
 		using pattern_t = ProceduralGeneration::Pattern;
+		using tag_type = std::string;
 	
 	private:
 		Coord coords{};
 
 		pattern_t pattern {};
+
+		vector<tag_type> tags{};
 	
 	public:
 		Tile() = default;
-		Tile(Coord coords, float angle = 0) : coords{ coords } {}
+		Tile(Coord coords) : coords{ coords } {}
 
 #pragma region Getters
 		Coord::coord_type getR() const { return coords.r; }
 		Coord::coord_type getQ() const { return coords.q; }
 		Coord getCoords() const { return coords; }
+
+		const vector<tag_type>& getTags() const { return tags; }
 
 		const auto& getRing() const { return pattern.externalRing; }
 		const auto& getRing(size_t index) const { return pattern.externalRing[index]; }
@@ -49,6 +54,9 @@ namespace ProceduralGenerationImplementation
 		void setPattern(pattern_t newPattern)
 		{
 			pattern = newPattern;
+
+			tags.clear();
+			tags.push_back(newPattern.tag);
 		}
 
 		bool compatible(const pattern_t &newPattern, size_t &angle) const
@@ -59,6 +67,7 @@ namespace ProceduralGenerationImplementation
 		void mergePattern(const pattern_t& newPattern, const size_t& angle)
 		{
 			pattern.merge(newPattern, angle);
+			tags.push_back(newPattern.tag);
 		}
 
 		void setContraintTo(const Tile& other, ProceduralGeneration::element_t element)
@@ -86,6 +95,7 @@ namespace ProceduralGenerationImplementation
 		void erase()
 		{
 			setPattern({ {}, {{}, {} ,{}, {}, {}, {}}, {{}, {} ,{}, {}, {}, {}}, {} });
+			tags.clear();
 		}
 
 		static float getAngleDegrees(int hexAngle)
