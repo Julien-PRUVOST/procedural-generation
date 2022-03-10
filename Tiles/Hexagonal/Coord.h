@@ -10,6 +10,7 @@ namespace Hexagonal
 		coord_type q;
 		coord_type r;
 
+		Coord() = default;
 		Coord(coord_type q, coord_type r) : q{ q }, r{ r } {}
 
 #pragma region Static

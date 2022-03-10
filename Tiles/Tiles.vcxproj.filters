@@ -19,6 +19,9 @@
     <Filter Include="Source Files\ProceduralGeneration">
       <UniqueIdentifier>{a023224b-ccb0-4809-a52c-1dbb01a3f084}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\ShinMathLib">
+      <UniqueIdentifier>{c1303c6b-153c-4701-b456-d65b3778764b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -50,8 +53,11 @@
     <ClInclude Include="Hexagonal\Math.h">
       <Filter>Source Files\Hexagonal</Filter>
     </ClInclude>
-    <ClInclude Include="ProceduralGeneration\Math.h">
-      <Filter>Source Files\ProceduralGeneration</Filter>
+    <ClInclude Include="ShinMathLib\Math.h">
+      <Filter>Source Files\ShinMathLib</Filter>
+    </ClInclude>
+    <ClInclude Include="ShinMathLib\VectorMath.h">
+      <Filter>Source Files\ShinMathLib</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

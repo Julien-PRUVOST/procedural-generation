@@ -64,6 +64,12 @@ namespace ProceduralGeneration
 
 		getline(input, subLine, ' ');
 		tile.center = subLine[0];
+
+		getline(input, subLine, ' ');
+		char unused_c;
+		unsigned int n;
+		decodeAsInt(subLine, unused_c, n);
+		tile.weight = static_cast<size_t>(n);
 	}
 
 #pragma region Generation
@@ -83,6 +89,9 @@ namespace ProceduralGeneration
 	template<class Generation>
 	void deserialize(string filename, Generation& gen)
 	{
+		std::string s = "MyUniqueFileTalkingAboutPengouins.txt";
+		std::ofstream f{ s };
+
 		std::ifstream file{ filename };
 		if (file)
 		{

@@ -6,7 +6,8 @@
 #include <vector>
 
 // Todo : remove those includes
-#include "Math.h"
+#include "../ShinMathLib/Math.h"
+#include "../ShinMathLib/VectorMath.h"
 #include "Rule.h"
 #include "../Tile.h"
 #include "../Hexagonal/Grid.h"
@@ -15,6 +16,7 @@
 namespace ProceduralGeneration
 {
 	using std::vector;
+	using namespace shinmathlib;	
 
 	using Grid = Hexagonal::Grid;
 
@@ -26,7 +28,9 @@ namespace ProceduralGeneration
 		using rule_ptr = std::unique_ptr<Rule>;
 		using pattern_ptr = std::shared_ptr<pattern_t>;
 
-		using tag_type = pattern_t::tag_type;
+		using tag_type = pattern_t::tag_t;
+
+		using seed_type = int;
 
 	private:
 		vector<rule_t> rules {};
@@ -36,6 +40,9 @@ namespace ProceduralGeneration
 		 * \brief The reproductibility of the seed cannot be guaranteed if multiple generation commands are used simultaneously on the same GenerationProcess
 		 */
 		std::mt19937 prng;
+		seed_type seed {};
+
+		std::mt19937 prngSeed;
 
 	public:
 		void add(rule_t &&rule)
@@ -46,6 +53,24 @@ namespace ProceduralGeneration
 		void add(pattern_t &&tile)
 		{
 			tiles[tile.tag].push_back(std::move(tile));
+		}
+
+	public:
+		void setRandomSeed()
+		{
+			std::uniform_int_distribution<seed_type> seedChooser{};
+			setSeed(seedChooser(prngSeed));
+		}
+
+		void setSeed(seed_type newSeed)
+		{
+			seed = newSeed;
+			prng.seed(seed);
+		}
+
+		seed_type getSeed() const
+		{
+			return seed;
 		}
 
 	public:
@@ -60,78 +85,68 @@ namespace ProceduralGeneration
 		 * \brief Is public only for debug puposes
 		 * \return A random position on the grid
 		 */
-		 Grid::tile_type& getRandomPos(Grid &grid)
+		Grid::tile_ptr getRandomPos(Grid &grid)
 		{
-			std::uniform_int_distribution<typename Grid::size_type> posChooser{ 0, grid.getSize() };
-
-			return grid.getTile(posChooser(prng));
+			const size_t index = VectorMath::chooseIndex(grid.getSize(), prng);
+			return grid.getTile(index);
 		}
 
-		pattern_t & getPattern(tag_type &tag)
+		Grid::tile_ptr getRandomValidPos(Grid& grid)
 		{
-			const std::uniform_int_distribution<size_t> tileChooser{ 0, tiles[tag].size() };
-
-			return tiles[tag][tileChooser(prng)];
+			const size_t index = VectorMath::chooseIndex(grid.getValidTileSize(), prng);
+			return grid.getValidTile(index);
 		}
 
-		void setPatternAt(pattern_t &pattern, Grid::tile_type &pos)
+		vector<pattern_t>& getPatterns(const tag_type& tag)
 		{
-			pos.setCenter(pattern.center);
-			pos.setRing(pattern.externalRing);
+			return tiles[tag];
 		}
+
+		static void eraseGrid(Grid &grid)
+		 {
+			 for (auto tile : grid.grid)
+			 {
+				 tile->erase();
+			 }
+		 }
 
 #pragma region Path
 	private:
-		auto getAngles(const typename Grid::tile_type &referenceTile, const vector<typename Grid::tile_ptr> &neighbors)
+		/// Unused
+		static vector<float> getAngles(const Grid::tile_ptr& referenceTile, const vector<Grid::tile_ptr>& neighbors)
 		{
 			vector<float> angles;
 
 			for (const auto& neighbor : neighbors)
 			{
-				angles.push_back(Grid::tile_type::getAngleDegrees(referenceTile.getTileAngleTo(*neighbor)));
+				angles.push_back(referenceTile->getAngleDegreesTo(*neighbor));
 			}
 
 			return angles;
 		}
 
-		auto getRelativeAngles(float referenceAngle, const vector<float> &angles)
+		static vector<float> getRelativeAngles(const Grid::tile_ptr &referenceTile, float referenceAngle, const vector<Grid::tile_ptr> &neighbors)
 		{
-			vector<float> relativeAngles;
+			vector<float> angles;
 
-			for (float angle: angles)
+			for (const auto& neighbor : neighbors)
 			{
-				relativeAngles.push_back(Math::getAngularDifference(angle, referenceAngle, 360.0f));
+				const float angle = referenceTile->getAngleDegreesTo(*neighbor);
+				angles.push_back(Math::angularDifference(angle, referenceAngle, 360.0f));
 			}
 
-			return relativeAngles;
+			return angles;
 		}
 
-		void filterNeighbors(vector<typename Grid::tile_ptr> &neighbors, vector<float>& angles, vector<float>& relativeAngles, float threshold = 360.0f)
+		static void filterNeighbors(vector<Grid::tile_ptr> &neighbors, vector<float>& relativeAngles, float threshold = 360.0f)
 		{
-			vector<size_t> toErase;
-			for (size_t i = 0; i != neighbors.size(); ++i)
-			{
-				if (std::abs(relativeAngles[i]) > threshold) toErase.push_back(i);
-			}
+			const vector<size_t> indices = VectorMath::filteredIndex(relativeAngles, [&threshold](const float& angle) { return std::abs(angle) > threshold; });
 
-			for(auto p = toErase.rbegin(); p != toErase.rend(); ++p)
-			{
-				auto it_Angles = angles.begin();
-				std::advance(it_Angles, *p);
-				angles.erase(it_Angles);
-
-				auto it_relativeAngles = relativeAngles.begin();
-				std::advance(it_relativeAngles, *p);
-				relativeAngles.erase(it_relativeAngles);
-
-				auto it_neighbors = neighbors.begin();
-				std::advance(it_neighbors, *p);
-				neighbors.erase(it_neighbors);
-			}
-			
+			VectorMath::eraseByIndex(relativeAngles, indices);
+			VectorMath::eraseByIndex(neighbors, indices);			
 		}
 
-		auto getTileProbability(vector<typename Grid::tile_ptr> &pool, const vector<float> &relativeAngles)
+		static vector<float> getTileProbability(const vector<float> &relativeAngles)
 		{
 			vector<float> probability;
 
@@ -141,102 +156,244 @@ namespace ProceduralGeneration
 			{
 				for (size_t j = i; j != relativeAngles.size(); ++j)
 				{
-					range = std::max(range, std::abs(Math::getAngularDifference(relativeAngles[i], relativeAngles[j])));
+					range = std::max(range, std::abs(Math::angularDifference(relativeAngles[i], relativeAngles[j])));
 				}
 			}
 
 			for (size_t i = 0; i != relativeAngles.size(); ++i)
 			{
-				probability.push_back((range - std::abs(relativeAngles[i])) / (range * (static_cast<float>(relativeAngles.size()) - 1)));
+				probability.push_back(range - std::abs(relativeAngles[i]));
 			}
 
 			return probability;
 		}
 
-		typename Grid::tile_type& getNextTileInPath(Grid &grid, typename Grid::tile_type &current, const typename Grid::tile_type &goal)
+		Grid::tile_ptr getNextTileInPath(Grid &grid, const Grid::tile_ptr &current, const Grid::tile_ptr &goal, const vector<Grid::tile_ptr> &visited)
 		{
-			vector<typename Grid::tile_ptr> neighbors =  grid.getNeighbors(current);
+			if (current->distance(*goal) == 1) return goal;
 
-			vector<float> angles = getAngles(current, neighbors);
+			vector<Grid::tile_ptr> neighbors =  grid.getValidNeighbors(*current);
 
-			const float referenceAngle = current.getAngleDegrees(goal);
-			vector<float> relativeAngles = getRelativeAngles(referenceAngle, angles);
+			VectorMath::eraseOncePtr(neighbors, visited);
 
-			filterNeighbors(neighbors, angles, relativeAngles, 90.0f);
+			const float referenceAngle = current->getAngleDegreesTo(*goal);
+			vector<float> relativeAngles = getRelativeAngles(current, referenceAngle, neighbors);
 
-			vector<float> probability = getTileProbability(neighbors, relativeAngles);
+			filterNeighbors(neighbors, relativeAngles, 90.0f);
 
-			std::discrete_distribution<size_t> distribution(probability.begin(), probability.end());
+			const vector<float> probability = getTileProbability(relativeAngles);
 
-			return *neighbors[distribution(prng)];
+			return *VectorMath::choose(neighbors, probability, prng);
+		}
+
+		static vector<pattern_t> getCompatiblePatterns(const Grid::tile_ptr& current, const vector<pattern_t>& patterns, vector<size_t>& outTileAngles)
+		{
+			vector<pattern_t> compatiblePatterns;
+
+			for (size_t i = 0; i != patterns.size(); ++i)
+			{
+				size_t angle;
+				if (current->compatible(patterns[i], angle))
+				{
+					compatiblePatterns.push_back(patterns[i]);
+					outTileAngles.push_back(angle);
+				}
+			}
+
+			return compatiblePatterns;
+		}
+
+		class pattern_not_found final : public std::exception {};
+
+		pattern_t choosePattern(const Grid::tile_ptr& current, const vector<pattern_t>& patterns, size_t &outAngle)
+		{
+			vector<size_t> tileAngles;
+
+			// Todo : I want compatible pattern on a specific order : the contraints placed must be respected, while the one added are just a bonus
+			const vector<pattern_t> compatiblePatterns = getCompatiblePatterns(current, patterns, tileAngles);
+
+			if (!compatiblePatterns.empty())
+			{
+				vector<size_t> probability;
+				for (const auto& pattern : compatiblePatterns)
+				{
+					probability.push_back(pattern.weight);
+				}
+
+				const size_t index = VectorMath::chooseIndex(probability, prng);
+				outAngle = tileAngles[index];
+				return compatiblePatterns[index];
+			}
+
+			throw pattern_not_found{};
+		}
+
+		static const tag_type& getTag(const Grid::tile_ptr& current, const Grid::tile_ptr& start, const Grid::tile_ptr& goal,
+		                              const tag_type &tagPath, const tag_type& tagStart, const tag_type& tagGoal)
+		{
+			if (*current == *start) return tagStart;
+			if (*current == *goal) return tagGoal;
+			return tagPath;
+		}
+
+		void getAndApplyPattern(Grid::tile_ptr& current, const Grid::tile_ptr& start, const Grid::tile_ptr& goal,
+			const tag_type& tagPath, const tag_type& tagStart, const tag_type& tagGoal)
+		{
+			size_t angle;
+			const tag_type& tag = getTag(current, start, goal, tagPath, tagStart, tagGoal);
+			const pattern_t pattern = choosePattern(current, getPatterns(tag), angle);
+
+			current->mergePattern(pattern, angle);
+		}
+
+		class interrupted : public std::exception {};
+
+		void buildPathIteration(Grid& grid, Grid::tile_ptr& current, const Grid::tile_ptr& start, const Grid::tile_ptr& goal,
+			const tag_type& tagPath, const tag_type& tagStart, const tag_type& tagGoal, const element_t &linkingElement,
+			vector<Grid::tile_ptr>& visited)
+		{
+			visited.push_back(current);
+
+			// Get the next tile
+			// Put the path element on the constraints of current, in direction of next. Same for next to current
+			// Choose a pattern to put on current
+			// Put that pattern on current
+			// current = next
+			Grid::tile_ptr next;
+			try
+			{
+				next = getNextTileInPath(grid, current, goal, visited);
+				current->setContraintTo(*next, linkingElement);
+				next->setContraintTo(*current, linkingElement);
+			}
+			catch (VectorMath::cannot_choose_in_empty_range)
+			{
+				current = goal;
+				next = goal;
+				throw interrupted{};
+			}
+
+			getAndApplyPattern(current, start, goal, tagPath, tagStart, tagGoal);
+
+			current = next;
+		}
+
+	public:
+
+		void buildPath(Grid& grid, tag_type tagStart, tag_type tagGoal, tag_type tagPath, Grid::tile_ptr start, Grid::tile_ptr goal, element_t linkingElement)
+		{
+			vector<Grid::tile_ptr> visited;
+
+			Grid::tile_ptr current = start;
+
+			while (*current != *goal)
+			{
+				try
+				{
+					buildPathIteration(grid, current, start, goal, tagPath, tagStart, tagGoal, linkingElement, visited);
+				}
+				catch (interrupted)
+				{
+					return;
+				}
+			}
+			getAndApplyPattern(current, start, goal, tagPath, tagStart, tagGoal);
+		}
+
+		void buildPath(Grid& grid, tag_type tagStart, tag_type tagGoal, tag_type tagPath, element_t linkingElement)
+		{
+			Grid::tile_ptr start = getRandomValidPos(grid);
+			Grid::tile_ptr goal = getRandomValidPos(grid);
+			buildPath(grid, std::move(tagStart), std::move(tagGoal), std::move(tagPath), start, goal, linkingElement);
 		}
 #pragma endregion
 
+#pragma region River
+	private:
+		Grid::tile_ptr getNextTileInRiver(Grid& grid, const Grid::tile_ptr& current, const vector<Grid::tile_ptr>& visited)
+		{
+			vector<Grid::tile_ptr> neighbors = grid.getValidNeighbors(*current);
+
+			VectorMath::eraseOncePtr(neighbors, visited);
+
+			return *VectorMath::choose(neighbors, prng);
+		}
+
+		pattern_t getAndApplyPattern(Grid::tile_ptr& current, const tag_type& tag)
+		{
+			size_t angle;
+			const pattern_t pattern = choosePattern(current, getPatterns(tag), angle);
+			current->mergePattern(pattern, angle);
+
+			return pattern;
+		}
+
+		void buildRiverIteration(Grid& grid, Grid::tile_ptr& current, const tag_type& tag, const element_t& linkingElement,
+			size_t& currentRiverSize, vector<Grid::tile_ptr>& visited)
+		{
+			visited.push_back(current);
+
+			// Get the next tile
+			// Put the path element on the constraints of current, in direction of next. Same for next to current
+			// Choose a pattern to put on current
+			// Put that pattern on current
+			// current = next
+
+			Grid::tile_ptr next; 
+
+			try
+			{
+				next = getNextTileInRiver(grid, current, visited);
+
+				current->setContraintTo(*next, linkingElement);
+				next->setContraintTo(*current, linkingElement);
+			}
+			catch (VectorMath::cannot_choose_in_empty_range)
+			{
+				throw interrupted{};
+			}
+
+			const pattern_t pattern = getAndApplyPattern(current, tag);
+
+			currentRiverSize += static_cast<size_t>(pattern.center != '0');
+			currentRiverSize += VectorMath::count_if(pattern.externalRing, [](const element_t& element) { return element != '0'; });
+
+			current = next;
+		}
+
 	public:
-		void buildPath(
-			Grid& grid,
-			tag_type tagStart,
-			tag_type tagGoal,
-			tag_type tagPath,
-			typename Grid::tile_type &start,
-			typename Grid::tile_type &goal)
+		void buildRiver(Grid& grid, tag_type tagStart, tag_type tagEnd, tag_type tagRiver, Grid::tile_ptr start, element_t linkingElement, size_t riverMinLength)
 		{
-			pattern_t &pattern = getPattern(tagStart);
-			setPatternAt(pattern, start);
+			vector<Grid::tile_ptr> visited;
 
-			typename Grid::tile_type current = start;
+			size_t currentRiverSize = 0;
 
-			while (current != goal)
+			Grid::tile_ptr current = start;
+
+			while (currentRiverSize < riverMinLength)
 			{
-				typename Grid::tile_type next = getNextTileInPath(grid, current, goal);
+				tag_type& tag = (*current == *start) ? tagStart : tagRiver;
 
-			//	next.setRing()
-			//	// Chose the next tile
-			//	// Place the constraint for the next tile
-			//	// Fill the current tile with a pattern available
-			//	// Current = next
-
-			//	pattern_ptr pattern = getPatternAt(tagStart);
-
-
-			//	current = next;
+				try
+				{
+					buildRiverIteration(grid, current, tag, linkingElement, currentRiverSize, visited);
+				}
+				catch (interrupted)
+				{
+					break;
+				}
 			}
-			
+
+			getAndApplyPattern(current, tagEnd);
 		}
 
-		void buildPath(Grid& grid, tag_type tagStart, tag_type tagGoal,	tag_type tagPath)
+		void buildRiver(Grid& grid, tag_type tagStart, tag_type tagGoal, tag_type tagRiver, element_t linkingElement, size_t riverMinLength)
 		{
-			buildPath(grid, std::move(tagStart), std::move(tagGoal), std::move(tagPath), getRandomPos(grid), getRandomPos(grid));
+			Grid::tile_ptr start = getRandomValidPos(grid);
+			buildRiver(grid, std::move(tagStart), std::move(tagGoal), std::move(tagRiver), start, linkingElement, riverMinLength);
 		}
 
-		void buildPath(Grid& grid, tag_type tagStart, tag_type tagGoal, typename Grid::tile_type& start, typename Grid::tile_type& goal, pattern_t::element_type element)
-		{
-			pattern_t &pattern = getPattern(tagStart);
-			setPatternAt(pattern, start);
-
-			typename Grid::tile_type* current = &start;
-
-			while (*current != goal)
-			{
-				typename Grid::tile_type* next = &getNextTileInPath(grid, *current, goal);
-
-				current->setCenter(element);
-
-				int angleToNext = current->getTileAngleTo(*next);
-
-				// Should be a ring of variable size depending on the grid
-				vector<pattern_t::element_type> ring{ element, {}, {}, {}, {}, {} };
-				ring = Pattern::rotateRing(ring, angleToNext);
-
-				// TODO : Should select a tile in the pool
-				current->addToRing(ring);
-
-				next->setCenter(element);
-				next->addToRing(Pattern::rotateRing(ring, 3));
-
-				current = next;
-			}
-		}
+#pragma endregion
 
 	};
 }

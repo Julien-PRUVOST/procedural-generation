@@ -10,78 +10,82 @@ namespace ProceduralGenerationImplementation
 	// template<class Coord>
 	class Tile
 	{
+	public:
 		using Coord = Hexagonal::Coord; // Remove for template
-		using element_type = ProceduralGeneration::Pattern::element_type; // Remove for template
+		using pattern_t = ProceduralGeneration::Pattern;
 	
 	private:
-		Coord coords;
+		Coord coords{};
 
-		vector<element_type> ring{};
-		element_type center{};
-
-		int tileAngle = 0;
-		float size = 1.0f;
-
+		pattern_t pattern {};
+	
 	public:
-
-		Tile(Coord coords, int tileAngle = 0, float size = 1.0f) : coords{ coords }, tileAngle{ tileAngle }, size { size }
-		{}
+		Tile() = default;
+		Tile(Coord coords, float angle = 0) : coords{ coords } {}
 
 #pragma region Getters
 		Coord::coord_type getR() const { return coords.r; }
 		Coord::coord_type getQ() const { return coords.q; }
 		Coord getCoords() const { return coords; }
 
-		float getSize() const { return size; }
+		const auto& getRing() const { return pattern.externalRing; }
+		const auto& getRing(size_t index) const { return pattern.externalRing[index]; }
 
-		float getX() const { return Hexagonal::Math::getX(getQ(), getR(), getSize()); }
-		float getY() const { return Hexagonal::Math::getY(getQ(), getR(), getSize()); }
-		float getAngleDegrees() const { return Hexagonal::Math::getAngleDegrees(tileAngle); }
+		const auto& getContraintRing() const { return pattern.constraintsRing; }
+		const auto& getContraintRing(size_t index) const { return pattern.constraintsRing[index]; }
+
+		const auto& getCenter() const { return pattern.center; }
+
+		float getX() const { return Hexagonal::Math::getX(getQ(), getR()); }
+		float getY() const { return Hexagonal::Math::getY(getQ(), getR()); }
 #pragma endregion
 
-#pragma region Setters
-		void setRing(const vector<element_type>& patternRing)
+#pragma region Pattern
+		const pattern_t& getPattern() const
 		{
-			ring.reserve(6);
-			copy(patternRing.begin(), patternRing.end(),  back_inserter(ring));
+			return pattern;
 		}
 
-		void addToRing(const vector<element_type>& patternRing)
+		void setPattern(pattern_t newPattern)
 		{
-			if (ring.empty()) setRing(patternRing);
-			else
-			{
-				for (size_t i = 0; i != patternRing.size(); ++i)
-				{
-					if (patternRing[i] != element_type{} && ring[i] == element_type{})
-						ring[i] = patternRing[i];
-				}
-			}
+			pattern = newPattern;
 		}
 
-		void setCenter(element_type patternCenter)
+		bool compatible(const pattern_t &newPattern, size_t &angle) const
 		{
-			center = patternCenter;
+			return pattern.compatible(newPattern, angle);
 		}
 
-		class bad_angle_exception : std::exception{};
-
-		/// Angle between 0 and 5
-		void setTileAngle(int newAngle)
+		void mergePattern(const pattern_t& newPattern, const size_t& angle)
 		{
-			if (0 <= newAngle && newAngle < 6) tileAngle = newAngle;
-			else throw bad_angle_exception{};
+			pattern.merge(newPattern, angle);
+		}
+
+		void setContraintTo(const Tile& other, ProceduralGeneration::element_t element)
+		{
+			const size_t angle = getTileAngleTo(other);
+			pattern.constraintsRing[angle] = element;
 		}
 #pragma endregion
 
-		int getTileAngleTo(const Tile &other) const
+		int distance(const Tile& other) const
+		{
+			return Hexagonal::Math::distance(getQ(), getR(), other.getQ(), other.getR());
+		}
+
+		size_t getTileAngleTo(const Tile &other) const
 		{
 			return Hexagonal::Math::getHexAngle(getQ(), getR(), other.getQ(), other.getR());
 		}
 
-		float getAngleDegrees(const Tile& other)
+		float getAngleDegreesTo(const Tile& other) const
 		{
 			return Hexagonal::Math::getAngleDegrees(getQ(), getR(), other.getQ(), other.getR());
+		}
+
+		void erase()
+		{
+			setPattern({ {}, {{}, {} ,{}, {}, {}, {}}, {{}, {} ,{}, {}, {}, {}}, {} });
 		}
 
 		static float getAngleDegrees(int hexAngle)
