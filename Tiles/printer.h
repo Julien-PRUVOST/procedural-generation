@@ -27,9 +27,9 @@ namespace printer
 				const auto tile = grid.getTile(index);
 				bool valid = grid.getLayout(index);
 
-				print(os, tile->getPattern().externalRing[4], valid ? '.' : ' ');
+				print(os, tile->getPattern().dataRing[4], valid ? '.' : ' ');
 				os << " ";
-				print(os, tile->getPattern().externalRing[5], valid ? '.' : ' ');
+				print(os, tile->getPattern().dataRing[5], valid ? '.' : ' ');
 				os << "   ";
 			}
 
@@ -43,11 +43,11 @@ namespace printer
 				const auto tile = grid.getTile(index);
 				bool valid = grid.getLayout(index);
 
-				print(os, tile->getPattern().externalRing[3], valid ? '.' : ' ');
+				print(os, tile->getPattern().dataRing[3], valid ? '.' : ' ');
 				os << " ";
 				print(os, tile->getPattern().center, valid ? '.' : ' ');
 				os << " ";
-				print(os, tile->getPattern().externalRing[0], valid ? '.' : ' ');
+				print(os, tile->getPattern().dataRing[0], valid ? '.' : ' ');
 				os << " ";
 			}
 
@@ -62,9 +62,9 @@ namespace printer
 				const auto tile = grid.getTile(index);
 				bool valid = grid.getLayout(index);
 
-				print(os, tile->getPattern().externalRing[2], valid ? '.' : ' ');
+				print(os, tile->getPattern().dataRing[2], valid ? '.' : ' ');
 				os << " ";
-				print(os, tile->getPattern().externalRing[1], valid ? '.' : ' ');
+				print(os, tile->getPattern().dataRing[1], valid ? '.' : ' ');
 				os << "   ";
 			}
 			os << std::endl;

@@ -38,7 +38,7 @@ namespace ProceduralGen
 
 		for (int i = 0; i < 6 && getline(input, subLine, ' '); ++i)
 		{
-			tile.externalRing.push_back(subLine[0]);
+			tile.dataRing.push_back(subLine[0]);
 		}
 
 		getline(input, subLine, ' ');

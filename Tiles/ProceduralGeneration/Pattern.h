@@ -9,46 +9,55 @@ namespace ProceduralGen
 	class Pattern
 	{
 	public:
-		using tag_t = std::string;
 		using element_t = T;
-
-		using ring_t = std::vector<element_t>;
+		using tag_t = std::string;
 
 		tag_t tag {};
-		ring_t constraintsRing {};
-		ring_t externalRing {};
-		element_t center {};
+
+		vector<element_t> constraintsRing {};
+		vector<element_t> dataRing{};
+		element_t center{};
+
 		size_t weight{}; // TODO : Maybe should not be in the pattern
 
 	private:
-		static ring_t rotateRing(const ring_t& ring, const size_t angle)
+		using iterator = typename vector<element_t>::iterator;
+		using const_iterator = typename vector<element_t>::const_iterator;
+
+		static auto rotate(const const_iterator& begin, const const_iterator& end, const size_t angle)
 		{
-			std::vector<element_t> rotatedRing;
+			auto distance = std::distance(begin, end);
 
-			for (size_t i = 0; i != ring.size(); ++i)
+			std::vector<element_t> rotated;
+
+			for (decltype(distance) i = 0;  i != distance; ++i)
 			{
-				rotatedRing.push_back(ring[(i + angle) % ring.size()]);
+				rotated.push_back(*std::next(begin, (i + angle) % distance));
 			}
-
-			return rotatedRing;
+			return rotated;
 		}
 
-		/// Assuming both rings have the same type and comparable elements
-		static bool compatibleWhenFixed(const ring_t &ring, const ring_t& otherRing)
+		static bool compatibleWhenFixed(const const_iterator& begin, const const_iterator& end, const const_iterator& otherBegin)
 		{
-			for (size_t i = 0; i != ring.size(); ++i)
+			auto distance = std::distance(begin, end);
+
+			for (decltype(distance) i = 0; i != distance; ++i)
 			{
-				if (!ring[i].compatible(otherRing[i])) return false;
+				if (!(begin + i)->compatible(*(otherBegin + i))) return false;
 			}
 			return true;
 		}
 
 		/// If true, change the angle to make the rings match. \n If false, leave the angle as it was. 
-		static bool compatibleByRotation(const ring_t& ring, const ring_t& otherRing, size_t &angle)
+		static bool compatibleByRotation(const const_iterator& begin, const const_iterator& end, const const_iterator& otherBegin, size_t &angle)
 		{
-			for (size_t iAngle = 0; iAngle != ring.size(); ++iAngle)
+			auto distance = std::distance(begin, end);
+
+			for (decltype(distance) iAngle = 0; iAngle != distance; ++iAngle)
 			{
-				if (compatibleWhenFixed(rotateRing(ring, iAngle), rotateRing(otherRing, iAngle)))
+				vector<element_t> firstRotated = rotate(begin, end, iAngle);
+				vector<element_t> secondRotated = rotate(otherBegin, otherBegin + distance, iAngle);
+				if (compatibleWhenFixed(firstRotated.begin(), firstRotated.end(), secondRotated.begin()))
 				{
 					angle = iAngle;
 					return true;
@@ -58,15 +67,17 @@ namespace ProceduralGen
 		}
 
 		/// If true, change the angle to make the rings match. \n If false, leave the angle as it was. 
-		bool compatible(const element_t& otherCenter, const ring_t& otherExternalRing, const ring_t& otherConstraintRing, size_t& angle) const
+		bool compatible(const element_t& otherCenter, const vector<element_t>& otherDataRing, const vector<element_t>& otherConstraintsRing, size_t& angle) const
 		{
 			if (!center.compatible(otherCenter)) return false;
 
-			for (size_t iAngle = 0; iAngle != otherExternalRing.size(); ++iAngle)
+			for (size_t iAngle = 0; iAngle != dataRing.size(); ++iAngle)
 			{
-				if (compatibleWhenFixed(externalRing, rotateRing(otherExternalRing, iAngle)))
+				vector<element_t> rotatedDataRing = rotate(otherDataRing.begin(), otherDataRing.end(), iAngle);
+				if (compatibleWhenFixed(dataRing.begin(), dataRing.end(), rotatedDataRing.begin()))
 				{
-					if (compatibleWhenFixed(constraintsRing, rotateRing(otherConstraintRing, iAngle)))
+					vector<element_t> rotatedContraintRing = rotate(otherConstraintsRing.begin(), otherConstraintsRing.end(), iAngle);
+					if (compatibleWhenFixed(constraintsRing.begin(), constraintsRing.end(), rotatedContraintRing.begin()))
 					{
 						angle = iAngle;
 						return true;
@@ -77,13 +88,15 @@ namespace ProceduralGen
 			return false;
 		}
 
-		static ring_t merge(const ring_t &ring, const ring_t &otherRing)
+		static vector<element_t> merge(const const_iterator& begin, const const_iterator& end, const const_iterator& otherBegin)
 		{
-			ring_t outputRing{};
+			auto distance = std::distance(begin, end);
 
-			for (size_t i = 0; i != ring.size(); ++i)
+			vector<element_t> outputRing{};
+
+			for (decltype(distance) i = 0; i != distance; ++i)
 			{
-				outputRing.push_back(ProceduralGen::merge(ring[i], otherRing[i]));
+				outputRing.push_back(ProceduralGen::merge(*(begin + i), *(otherBegin + i)));
 			}
 
 			return outputRing;
@@ -93,14 +106,14 @@ namespace ProceduralGen
 		/// If true, change the angle to make the rings match. \n If false, leave the angle as it was.
 		bool compatible(const Pattern &other, size_t &angle) const
 		{
-			return compatible(other.center, other.externalRing, other.constraintsRing, angle);
+			return compatible(other.center, other.dataRing, other.constraintsRing, angle);
 		}
 
 		void merge(const Pattern& other, const size_t& angle)
 		{
 			center = ProceduralGen::merge(center, other.center);
-			externalRing = merge(externalRing, rotateRing(other.externalRing, angle));
-			constraintsRing = merge(constraintsRing, rotateRing(other.constraintsRing, angle));
+			dataRing = merge(dataRing.begin(), dataRing.end(), rotate(other.dataRing.begin(), other.dataRing.end(), angle).begin());
+			constraintsRing = merge(constraintsRing.begin(), constraintsRing.end(), rotate(other.constraintsRing.begin(), other.constraintsRing.end(), angle).begin());
 		}
 	};
 }
