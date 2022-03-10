@@ -149,7 +149,6 @@
     <ClInclude Include="printer.h" />
     <ClInclude Include="ProceduralGeneration\deserializer.h" />
     <ClInclude Include="ProceduralGeneration\Generation.h" />
-    <ClInclude Include="ProceduralGeneration\Rule.h" />
     <ClInclude Include="ProceduralGeneration\Pattern.h" />
     <ClInclude Include="ShinMathLib\Math.h" />
     <ClInclude Include="ShinMathLib\VectorMath.h" />

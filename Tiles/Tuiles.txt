@@ -1,9 +1,3 @@
-# Rules
-R 18
-R C 1
-R C P
-
-# Encoding
 RiverEnd R 0 0 0 0 0, R 0 0 0 0 0, R, 5
 
 River R R 0 0 0 0, R R 0 0 0 0, R, 2

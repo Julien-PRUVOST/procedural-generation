@@ -35,9 +35,6 @@
     <ClInclude Include="ProceduralGeneration\Generation.h">
       <Filter>Source Files\ProceduralGeneration</Filter>
     </ClInclude>
-    <ClInclude Include="ProceduralGeneration\Rule.h">
-      <Filter>Source Files\ProceduralGeneration</Filter>
-    </ClInclude>
     <ClInclude Include="ProceduralGeneration\Pattern.h">
       <Filter>Source Files\ProceduralGeneration</Filter>
     </ClInclude>

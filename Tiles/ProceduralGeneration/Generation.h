@@ -9,7 +9,6 @@
 // Todo : remove those includes
 #include "../ShinMathLib/Math.h"
 #include "../ShinMathLib/VectorMath.h"
-#include "Rule.h"
 #include "../Tile.h"
 #include "../Hexagonal/Grid.h"
 
@@ -24,9 +23,7 @@ namespace ProceduralGeneration
 	class GenerationProcess
 	{
 	public:
-		using rule_t = Rule;
 		using pattern_t = Pattern;
-		using rule_ptr = std::unique_ptr<Rule>;
 		using pattern_ptr = std::shared_ptr<pattern_t>;
 
 		using tag_type = pattern_t::tag_t;
@@ -37,7 +34,6 @@ namespace ProceduralGeneration
 		static bool falseCondition(const Grid::tile_ptr&) { return false; }
 
 	private:
-		vector<rule_t> rules {};
 		std::map<tag_type, vector<pattern_t>> tiles {};
 
 		/**
@@ -49,11 +45,6 @@ namespace ProceduralGeneration
 		std::mt19937 prngSeed;
 
 	public:
-		void add(rule_t &&rule)
-		{
-			rules.push_back(std::move(rule));
-		}
-
 		void add(pattern_t &&tile)
 		{
 			tiles[tile.tag].push_back(std::move(tile));

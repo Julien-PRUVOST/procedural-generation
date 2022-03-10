@@ -22,27 +22,6 @@ namespace ProceduralGeneration
 	}
 
 	template <class Generation>
-	void deserialize(const string &line, typename Generation::rule_t &rule)
-	{
-		std::istringstream input{ line };
-
-		string subLine;
-		bool mask[3] = { true, true, true };
-		typename Generation::rule_t::tile_element_type params[3];
-		typename Generation::rule_t::value_type n = 0;
-
-		for (int i = 0; i < 3 && getline(input, subLine, ' '); ++i)
-		{
-			mask[i] = decodeAsInt(subLine, params[i], n);
-		}
-
-		if (!mask[0] && mask[1] && mask[2]) rule.create(params[0], n);
-		if (!mask[0] && !mask[1] && mask[2]) rule.create(params[0], params[1], n);
-		if (!mask[0] && !mask[1] && !mask[2]) rule.create(params[0], params[1], params[2]);
-	}
-
-
-	template <class Generation>
 	void deserialize(const string &line, typename Generation::pattern_t &tile)
 	{
 		std::istringstream input{ line };
@@ -96,17 +75,8 @@ namespace ProceduralGeneration
 		if (file)
 		{
 			string line;
-			if (!getline(file, line)) return;
 
-			if (line.find("# Rules", 0) == 0)
-			{
-				deserializeCategory<Generation::rule_t>(file, line, gen);
-			}
-
-			if (line.find("# Encoding", 0) == 0)
-			{
-				deserializeCategory<Generation::pattern_t>(file, line, gen);
-			}
+			deserializeCategory<Generation::pattern_t>(file, line, gen);
 		}
 	}
 #pragma endregion
