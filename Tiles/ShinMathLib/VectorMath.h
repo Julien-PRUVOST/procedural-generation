@@ -20,7 +20,7 @@ namespace shinmathlib {
 		template <class ProbaType, class IntType = size_t>
 		IntType chooseIndex(const std::vector<ProbaType>& probability, std::mt19937& prng)
 		{
-			if (probability.size() == 0) throw cannot_choose_in_empty_range{};
+			if (probability.empty()) throw cannot_choose_in_empty_range{};
 			const std::discrete_distribution<IntType> chooser{ probability.begin(), probability.end() };
 			return chooser(prng);
 		}
