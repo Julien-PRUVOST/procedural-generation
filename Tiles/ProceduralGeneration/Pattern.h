@@ -1,10 +1,13 @@
 ﻿#pragma once
 #include <string>
 #include <vector>
+#include "ShinMathLib/VectorMath.h"
 #include "Element.h"
 
 namespace ProceduralGen
 {
+	using namespace shinmathlib;
+
 	template<class T = Element<>>
 	class Pattern
 	{
@@ -24,46 +27,10 @@ namespace ProceduralGen
 		using iterator = typename vector<element_t>::iterator;
 		using const_iterator = typename vector<element_t>::const_iterator;
 
-		static auto rotate(const const_iterator& begin, const const_iterator& end, const size_t angle)
-		{
-			auto distance = std::distance(begin, end);
-
-			std::vector<element_t> rotated;
-
-			for (decltype(distance) i = 0;  i != distance; ++i)
-			{
-				rotated.push_back(*std::next(begin, (i + angle) % distance));
-			}
-			return rotated;
-		}
-
 		static bool compatibleWhenFixed(const const_iterator& begin, const const_iterator& end, const const_iterator& otherBegin)
 		{
-			auto distance = std::distance(begin, end);
-
-			for (decltype(distance) i = 0; i != distance; ++i)
-			{
-				if (!(begin + i)->compatible(*(otherBegin + i))) return false;
-			}
-			return true;
-		}
-
-		/// If true, change the angle to make the rings match. \n If false, leave the angle as it was. 
-		static bool compatibleByRotation(const const_iterator& begin, const const_iterator& end, const const_iterator& otherBegin, size_t &angle)
-		{
-			auto distance = std::distance(begin, end);
-
-			for (decltype(distance) iAngle = 0; iAngle != distance; ++iAngle)
-			{
-				vector<element_t> firstRotated = rotate(begin, end, iAngle);
-				vector<element_t> secondRotated = rotate(otherBegin, otherBegin + distance, iAngle);
-				if (compatibleWhenFixed(firstRotated.begin(), firstRotated.end(), secondRotated.begin()))
-				{
-					angle = iAngle;
-					return true;
-				}
-			}
-			return false;
+			return VectorMath::compare(begin, end, otherBegin,
+				[](const element_t& a, const element_t& b) {return a.compatible(b); }) == end;
 		}
 
 		/// If true, change the angle to make the rings match. \n If false, leave the angle as it was. 
@@ -73,18 +40,15 @@ namespace ProceduralGen
 
 			for (size_t iAngle = 0; iAngle != dataRing.size(); ++iAngle)
 			{
-				vector<element_t> rotatedDataRing = rotate(otherDataRing.begin(), otherDataRing.end(), iAngle);
-				if (compatibleWhenFixed(dataRing.begin(), dataRing.end(), rotatedDataRing.begin()))
+				if (compatibleWhenFixed(dataRing.begin(), dataRing.end(), VectorMath::rotate(otherDataRing, iAngle).begin()))
 				{
-					vector<element_t> rotatedContraintRing = rotate(otherConstraintsRing.begin(), otherConstraintsRing.end(), iAngle);
-					if (compatibleWhenFixed(constraintsRing.begin(), constraintsRing.end(), rotatedContraintRing.begin()))
+					if (compatibleWhenFixed(constraintsRing.begin(), constraintsRing.end(), VectorMath::rotate(otherConstraintsRing, iAngle).begin()))
 					{
 						angle = iAngle;
 						return true;
 					}
 				}
 			}
-
 			return false;
 		}
 
@@ -112,8 +76,8 @@ namespace ProceduralGen
 		void merge(const Pattern& other, const size_t& angle)
 		{
 			center = ProceduralGen::merge(center, other.center);
-			dataRing = merge(dataRing.begin(), dataRing.end(), rotate(other.dataRing.begin(), other.dataRing.end(), angle).begin());
-			constraintsRing = merge(constraintsRing.begin(), constraintsRing.end(), rotate(other.constraintsRing.begin(), other.constraintsRing.end(), angle).begin());
+			dataRing = merge(dataRing.begin(), dataRing.end(), VectorMath::rotate(other.dataRing, angle).begin());
+			constraintsRing = merge(constraintsRing.begin(), constraintsRing.end(), VectorMath::rotate(other.constraintsRing, angle).begin());
 		}
 	};
 }

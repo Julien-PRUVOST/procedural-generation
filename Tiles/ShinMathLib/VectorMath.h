@@ -123,34 +123,74 @@ namespace shinmathlib {
 			}
 		}
 
-		template <class T, typename Lambda>
-		std::vector<size_t> filteredIndex(std::vector<T>& v, Lambda function)
+		template <class Container, class UnaryPredicate>
+		std::vector<size_t> filteredIndex(const Container& v, UnaryPredicate f)
 		{
 			std::vector<size_t> index;
 
 			for (size_t i = 0; i != v.size(); ++i)
 			{
-				if (function(v[i])) index.push_back(i);
+				if (f(v[i]))
+					index.push_back(i);
 			}
 
 			return index;
 		}
 
-		template <class T, class U>
-		U sum(std::vector<T>& v, U init)
+		template <class Container, class Init>
+		Init sum(Container& v, Init init)
 		{
 			for (auto p = v.begin(); p != v.end(); ++p)
 			{
-				init += static_cast<U>(*p);
+				init += static_cast<Init>(*p);
 			}
 			return init;
 		}
 
-		template<class T, class UnaryPredicate>
-		auto count_if(const std::vector<T>& v, UnaryPredicate f)
+		template<class Container, class UnaryPredicate>
+		auto count_if(const Container& v, UnaryPredicate f)
 		{
 			return std::count_if(v.begin(), v.end(), f);
 		}
+
+		template<class InputIt, class OutputIt>
+		OutputIt rotate(const InputIt& first, const InputIt& last, OutputIt d_first, const size_t& n)
+		{
+			auto size = std::distance(first, last);
+			for (decltype(size) i = 0; i != size; (void)++i, (void)++d_first)
+			{
+				*d_first = *(first + (i + n) % size);
+			}
+			return d_first;
+		}
+
+		template <class Container>
+		static Container rotate(const Container& in, const size_t& n)
+		{
+			Container result;
+			result.reserve(in.size());
+
+			VectorMath::rotate(in.begin(), in.end(), std::back_inserter(result), n);
+			return result;
+		}
+
+		template<class Iterator, class BinaryPredicate>
+		auto compare(Iterator begin, const Iterator& end, Iterator otherBegin, BinaryPredicate f)
+		{
+			for (; begin != end; (void)++begin, (void)++otherBegin)
+			{
+				if (!f(*begin, *otherBegin))
+					return begin;
+			}
+			return begin;
+		}
+
+		template<class T, class BinaryPredicate>
+		auto compare(const std::vector<T>& v, const std::vector<T>& w, BinaryPredicate f)
+		{
+			return compare(v.begin(), v.end(), w.begin(), f);
+		}
+
 	}
 
 }
