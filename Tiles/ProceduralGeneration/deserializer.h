@@ -33,16 +33,19 @@ namespace ProceduralGen
 
 		for (int i = 0; i < 6 && getline(input, subLine, ' '); ++i)
 		{
-			tile.constraintsRing.push_back(subLine[0]);
+			tile.constraints.push_back(subLine[0]);
 		}
+
+		tile.data.push_back({});
 
 		for (int i = 0; i < 6 && getline(input, subLine, ' '); ++i)
 		{
-			tile.dataRing.push_back(subLine[0]);
+			tile.data[0].push_back(subLine[0]);
 		}
 
 		getline(input, subLine, ' ');
-		tile.center = subLine[0];
+		tile.data.push_back({});
+		tile.data[1].push_back(subLine[0]);
 
 		getline(input, subLine, ' ');
 		char unused_c;

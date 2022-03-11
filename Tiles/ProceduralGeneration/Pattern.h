@@ -1,8 +1,8 @@
 ﻿#pragma once
 #include <string>
 #include <vector>
-#include "ShinMathLib/VectorMath.h"
 #include "Element.h"
+#include "../ShinMathLib/VectorMath.h"
 
 namespace ProceduralGen
 {
@@ -17,9 +17,8 @@ namespace ProceduralGen
 
 		tag_t tag {};
 
-		vector<element_t> constraintsRing {};
-		vector<element_t> dataRing{};
-		element_t center{};
+		vector<element_t> constraints {};
+		vector<vector<element_t>> data {};
 
 		size_t weight{}; // TODO : Maybe should not be in the pattern
 
@@ -34,15 +33,23 @@ namespace ProceduralGen
 		}
 
 		/// If true, change the angle to make the rings match. \n If false, leave the angle as it was. 
-		bool compatible(const element_t& otherCenter, const vector<element_t>& otherDataRing, const vector<element_t>& otherConstraintsRing, size_t& angle) const
+		bool compatible(const vector<element_t>& otherConstraints, const vector<vector<element_t>>& otherData, size_t& angle) const
 		{
-			if (!center.compatible(otherCenter)) return false;
-
-			for (size_t iAngle = 0; iAngle != dataRing.size(); ++iAngle)
+			for (size_t iAngle = 0; iAngle != constraints.size(); ++iAngle)
 			{
-				if (compatibleWhenFixed(dataRing.begin(), dataRing.end(), VectorMath::rotate(otherDataRing, iAngle).begin()))
+				if (compatibleWhenFixed(constraints.begin(), constraints.end(), VectorMath::rotate(otherConstraints, iAngle).begin()))
 				{
-					if (compatibleWhenFixed(constraintsRing.begin(), constraintsRing.end(), VectorMath::rotate(otherConstraintsRing, iAngle).begin()))
+					bool compatible = true;
+					for (size_t j = 0; j != data.size(); ++j)
+					{
+						if (!compatibleWhenFixed(data[j].begin(), data[j].end(), VectorMath::rotate(otherData[j], iAngle).begin()))
+						{
+							compatible = false;
+							break;
+						}
+					}
+
+					if (compatible)
 					{
 						angle = iAngle;
 						return true;
@@ -66,18 +73,26 @@ namespace ProceduralGen
 			return outputRing;
 		}
 
+		void merge(const vector<element_t>& otherConstraints, const vector<vector<element_t>>& otherData, const size_t& angle)
+		{
+			constraints = merge(constraints.begin(), constraints.end(), VectorMath::rotate(otherConstraints, angle).begin());
+
+			for (size_t j = 0; j!= data.size(); ++j)
+			{
+				data[j] = merge(data[j].begin(), data[j].end(), VectorMath::rotate(otherConstraints, angle).begin());
+			}
+		}
+
 	public:
 		/// If true, change the angle to make the rings match. \n If false, leave the angle as it was.
 		bool compatible(const Pattern &other, size_t &angle) const
 		{
-			return compatible(other.center, other.dataRing, other.constraintsRing, angle);
+			return compatible(other.constraints, other.data, angle);
 		}
 
 		void merge(const Pattern& other, const size_t& angle)
 		{
-			center = ProceduralGen::merge(center, other.center);
-			dataRing = merge(dataRing.begin(), dataRing.end(), VectorMath::rotate(other.dataRing, angle).begin());
-			constraintsRing = merge(constraintsRing.begin(), constraintsRing.end(), VectorMath::rotate(other.constraintsRing, angle).begin());
+			merge(other.constraints, other.data, angle);
 		}
 	};
 }

@@ -34,13 +34,13 @@ namespace ProceduralGenerationImplementation
 
 		const vector<tag_type>& getTags() const { return tags; }
 
-		const auto& getRing() const { return pattern.externalRing; }
-		const auto& getRing(size_t index) const { return pattern.externalRing[index]; }
+		const auto& getRing() const { return pattern.data[0]; }
+		const auto& getRing(size_t index) const { return pattern.data[0][index]; }
 
-		const auto& getContraintRing() const { return pattern.constraintsRing; }
-		const auto& getContraintRing(size_t index) const { return pattern.constraintsRing[index]; }
+		const auto& getContraints() const { return pattern.constraints; }
+		const auto& getContraints(size_t index) const { return pattern.constraints[index]; }
 
-		const auto& getCenter() const { return pattern.center; }
+		const auto& getCenter() const { return pattern.data[1][0]; }
 
 		float getX() const { return Hexagonal::Math::getX(getQ(), getR()); }
 		float getY() const { return Hexagonal::Math::getY(getQ(), getR()); }
@@ -74,7 +74,7 @@ namespace ProceduralGenerationImplementation
 		void setContraintTo(const Tile& other, typename pattern_t::element_t element)
 		{
 			const size_t angle = getTileAngleTo(other);
-			pattern.constraintsRing[angle] = element;
+			pattern.constraints[angle] = element;
 		}
 #pragma endregion
 
@@ -95,7 +95,7 @@ namespace ProceduralGenerationImplementation
 
 		void erase()
 		{
-			setPattern({ {}, {{}, {} ,{}, {}, {}, {}}, {{}, {} ,{}, {}, {}, {}}, {} });
+			setPattern({ {}, {{}, {} ,{}, {}, {}, {}}, {{{}, {} ,{}, {}, {}, {}}, {{}}}, {} });
 			tags.clear();
 		}
 
