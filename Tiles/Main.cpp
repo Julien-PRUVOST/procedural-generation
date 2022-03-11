@@ -16,5 +16,6 @@ int main()
 	grid.clear();
 
 	gen.buildPath(grid, "RiverEnd", "RiverEnd", "River", grid.getValidTile(0), grid.getValidTile(140), 'R');
+	gen.buildPath(grid, "RiverEnd", "RiverEnd", "River", grid.getValidTile(2), grid.getValidTile(20), 'R');
 	printer::print("output.txt", grid);
 }

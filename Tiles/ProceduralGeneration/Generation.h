@@ -190,43 +190,45 @@ namespace ProceduralGen
 			return *VectorMath::choose(neighbors, probability, prng);
 		}
 
-		static vector<pattern_t> getCompatiblePatterns(const Grid::tile_ptr& current, const vector<pattern_t>& patterns, vector<size_t>& outTileAngles)
+		template <class Selector>
+		static vector<pattern_t> getPatterns(const Grid::tile_ptr& current, const vector<pattern_t>& patterns, vector<size_t>& outTileAngles, Selector f)
 		{
-			vector<pattern_t> compatiblePatterns;
+			vector<pattern_t> correctPatterns;
 
 			for (size_t i = 0; i != patterns.size(); ++i)
 			{
 				size_t angle;
-				if (current->compatible(patterns[i], angle))
+				if (f(current, patterns[i], angle))
 				{
-					compatiblePatterns.push_back(patterns[i]);
+					correctPatterns.push_back(patterns[i]);
 					outTileAngles.push_back(angle);
 				}
 			}
 
-			return compatiblePatterns;
+			return correctPatterns;
 		}
 
 		class pattern_not_found final : public std::exception {};
 
-		pattern_t choosePattern(const Grid::tile_ptr& current, const vector<pattern_t>& patterns, size_t &outAngle)
+		template <class Selector>
+		pattern_t choosePattern(const Grid::tile_ptr& current, const vector<pattern_t>& patterns, size_t &outAngle, Selector f)
 		{
 			vector<size_t> tileAngles;
 
 			// Todo : I want compatible pattern on a specific order : the contraints placed must be respected, while the one added are just a bonus
-			const vector<pattern_t> compatiblePatterns = getCompatiblePatterns(current, patterns, tileAngles);
+			const vector<pattern_t> availablePatterns = getPatterns(current, patterns, tileAngles, f);
 
-			if (!compatiblePatterns.empty())
+			if (!availablePatterns.empty())
 			{
 				vector<size_t> probability;
-				for (const auto& pattern : compatiblePatterns)
+				for (const auto& pattern : availablePatterns)
 				{
 					probability.push_back(pattern.weight);
 				}
 
 				const size_t index = VectorMath::chooseIndex(probability, prng);
 				outAngle = tileAngles[index];
-				return compatiblePatterns[index];
+				return availablePatterns[index];
 			}
 
 			throw pattern_not_found{};
@@ -240,15 +242,28 @@ namespace ProceduralGen
 			return tagPath;
 		}
 
+		template <class Selector>
 		void getAndApplyPattern(Grid::tile_ptr& current, const Grid::tile_ptr& start, const Grid::tile_ptr& goal,
-			const tag_type& tagPath, const tag_type& tagStart, const tag_type& tagGoal)
+			const tag_type& tagPath, const tag_type& tagStart, const tag_type& tagGoal, Selector f)
 		{
 			size_t angle;
 			const tag_type& tag = getTag(current, start, goal, tagPath, tagStart, tagGoal);
-			const pattern_t pattern = choosePattern(current, getPatterns(tag), angle);
+
+			const pattern_t pattern = choosePattern(current, getPatterns(tag), angle, f);
 
 			current->mergePattern(pattern, angle);
 		}
+
+		static bool constrained(const Grid::tile_ptr& current, const pattern_t& pattern, size_t& angle)
+		{
+			return current->constrained(pattern, angle);
+		}
+
+		static bool compatible(const Grid::tile_ptr& current, const pattern_t& pattern, size_t& angle)
+		{
+			return current->compatible(pattern, angle);
+		}
+
 
 		class interrupted : public std::exception {};
 
@@ -278,7 +293,7 @@ namespace ProceduralGen
 				throw interrupted{};
 			}
 
-			getAndApplyPattern(current, start, goal, tagPath, tagStart, tagGoal);
+			getAndApplyPattern(current, start, goal, tagPath, tagStart, tagGoal, constrained);
 
 			current = next;
 
@@ -305,7 +320,7 @@ namespace ProceduralGen
 					return;
 				}
 			}
-			getAndApplyPattern(current, start, goal, tagPath, tagStart, tagGoal);
+			getAndApplyPattern(current, start, goal, tagPath, tagStart, tagGoal, constrained);
 		}
 
 		void buildPath(Grid& grid, tag_type tagStart, tag_type tagGoal, tag_type tagPath, Grid::tile_type::pattern_t::element_t linkingElement,

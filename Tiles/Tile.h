@@ -60,6 +60,11 @@ namespace ProceduralGenerationImplementation
 			tags.push_back(newPattern.tag);
 		}
 
+		bool constrained(const pattern_t& newPattern, size_t& angle) const
+		{
+			return pattern.compatible(newPattern, angle);
+		}
+
 		bool compatible(const pattern_t &newPattern, size_t &angle) const
 		{
 			return pattern.compatible(newPattern, angle);

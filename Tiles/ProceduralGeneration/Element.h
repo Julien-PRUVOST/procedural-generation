@@ -72,9 +72,14 @@ namespace ProceduralGen
 			return val;
 		}
 
+		bool constrained(const Element& other) const
+		{
+			return isDefault() || *this == other;
+		}
+
 		bool compatible(const Element& other) const
 		{
-			return isDefault(val) || *this == other;
+			return isDefault() || other.isDefault() || *this == other;
 		}
 
 		static void addDefaultValue(value_t val)
@@ -93,6 +98,11 @@ namespace ProceduralGen
 		}
 	};
 
+	template <class T>
+	bool constrained(const Element<T>& element, const Element<T>& other)
+	{
+		return element.constrained(other);
+	}
 
 	template <class T>
 	bool compatible(const Element<T>& element, const Element<T>& other)
