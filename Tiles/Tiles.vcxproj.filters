@@ -27,9 +27,6 @@
     <ClCompile Include="Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ProceduralGeneration\Element.cpp">
-      <Filter>Source Files\ProceduralGeneration</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ProceduralGeneration\deserializer.h">

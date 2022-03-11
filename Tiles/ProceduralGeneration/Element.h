@@ -8,9 +8,37 @@ namespace ProceduralGen
 
 	template <class value_t = char>
 	class Element {
-		value_t val{};
 
 	private:
+		class Config
+		{
+		public:
+			static Config& getInstance()
+			{
+				static Config instance;
+				return instance;
+			}
+		private:
+			vector<value_t> defaultValues{ {} };
+
+			Config() = default;
+		public:
+			Config(Config const&) = delete;
+			void operator=(Config const&) = delete;
+
+			bool isDefault(const value_t& v)
+			{
+				return std::find(defaultValues.begin(), defaultValues.end(), v) != defaultValues.end();
+			}
+
+			void addDefaultValue(value_t v)
+			{
+				defaultValues.push_back(std::move(v));
+			}
+		};
+
+		value_t val{};
+
 		bool operator==(const Element& other) const {
 			return val == other.val;
 		}
@@ -20,7 +48,7 @@ namespace ProceduralGen
 		}		
 
 	public:
-		static vector<value_t> defaultValues;
+		
 
 		Element() = default;
 		~Element() = default;
@@ -49,14 +77,14 @@ namespace ProceduralGen
 			return isDefault(val) || *this == other;
 		}
 
-		static void addDefaultValue(const value_t& val)
+		static void addDefaultValue(value_t val)
 		{
 			if (!isDefault(val))
-				defaultValues.push_back(val);
+				Config::getInstance().addDefaultValue(std::move(val));
 		}
 
 		static bool isDefault(const value_t& val) {
-			return std::find(defaultValues.begin(), defaultValues.end(), val) != defaultValues.end();
+			return Config::getInstance().isDefault(val);
 		}
 
 		bool isDefault() const

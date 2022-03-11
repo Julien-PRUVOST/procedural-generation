@@ -141,7 +141,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="ProceduralGeneration\Element.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Hexagonal\Coord.h" />
