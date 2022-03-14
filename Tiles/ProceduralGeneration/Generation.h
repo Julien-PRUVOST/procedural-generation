@@ -7,6 +7,8 @@
 #include <functional>
 
 // Todo : remove those includes
+#include <chrono>
+
 #include "../ShinMathLib/Math.h"
 #include "../ShinMathLib/VectorMath.h"
 #include "../Tile.h"
@@ -46,6 +48,26 @@ namespace ProceduralGen
 		std::mt19937 prngSeed;
 
 	public:
+		GenerationProcess(seed_type seed) : seed{seed}
+		{
+			if (seed == 0)
+			{
+				std::random_device rd;
+				prng.seed(rd() ^ (
+					static_cast<std::mt19937::result_type>(std::chrono::duration_cast<std::chrono::seconds>(
+						std::chrono::system_clock::now().time_since_epoch()
+						).count()) +
+					static_cast<std::mt19937::result_type>(std::chrono::duration_cast<std::chrono::microseconds>(
+						std::chrono::high_resolution_clock::now().time_since_epoch()
+						).count()))
+				);
+			} else
+			{
+				prng.seed(seed);
+			}
+			
+		}
+
 		void add(pattern_t &&tile)
 		{
 			tiles[tile.tag].push_back(std::move(tile));
@@ -154,19 +176,18 @@ namespace ProceduralGen
 		{
 			vector<float> probability;
 
-			float range = 0.0f;
-
-			for(size_t i = 0; i != relativeAngles.size(); ++i)
+			if (relativeAngles.empty())
 			{
-				for (size_t j = i; j != relativeAngles.size(); ++j)
-				{
-					range = std::max(range, std::abs(Math::angularDifference(relativeAngles[i], relativeAngles[j])));
-				}
+				return {};
 			}
+
+			float range = std::max(0.0f, *std::max_element(relativeAngles.begin(), relativeAngles.end())) - std::min(0.0f, *std::min_element(relativeAngles.begin(), relativeAngles.end()));
+
+			const float min = *std::min_element(relativeAngles.begin(), relativeAngles.end());
 
 			for (size_t i = 0; i != relativeAngles.size(); ++i)
 			{
-				probability.push_back(range - std::abs(relativeAngles[i]));
+				probability.push_back(range - (relativeAngles[i] - min));
 			}
 
 			return probability;
@@ -190,15 +211,15 @@ namespace ProceduralGen
 			return *VectorMath::choose(neighbors, probability, prng);
 		}
 
-		template <class Selector>
-		static vector<pattern_t> getPatterns(const Grid::tile_ptr& current, const vector<pattern_t>& patterns, vector<size_t>& outTileAngles, Selector f)
+		static vector<pattern_t> getPatterns(const Grid::tile_ptr& current, const vector<pattern_t>& patterns, vector<size_t>& outTileAngles)
 		{
 			vector<pattern_t> correctPatterns;
 
 			for (size_t i = 0; i != patterns.size(); ++i)
 			{
-				size_t angle;
-				if (f(current, patterns[i], angle))
+				vector<size_t> compatibleAngles = current->getCompatibleAngles(patterns[i]);
+
+				for (const size_t& angle : compatibleAngles)
 				{
 					correctPatterns.push_back(patterns[i]);
 					outTileAngles.push_back(angle);
@@ -210,13 +231,12 @@ namespace ProceduralGen
 
 		class pattern_not_found final : public std::exception {};
 
-		template <class Selector>
-		pattern_t choosePattern(const Grid::tile_ptr& current, const vector<pattern_t>& patterns, size_t &outAngle, Selector f)
+		pattern_t choosePattern(const Grid::tile_ptr& current, const vector<pattern_t>& patterns, size_t &outAngle)
 		{
 			vector<size_t> tileAngles;
 
 			// Todo : I want compatible pattern on a specific order : the contraints placed must be respected, while the one added are just a bonus
-			const vector<pattern_t> availablePatterns = getPatterns(current, patterns, tileAngles, f);
+			const vector<pattern_t> availablePatterns = getPatterns(current, patterns, tileAngles);
 
 			if (!availablePatterns.empty())
 			{
@@ -242,28 +262,16 @@ namespace ProceduralGen
 			return tagPath;
 		}
 
-		template <class Selector>
 		void getAndApplyPattern(Grid::tile_ptr& current, const Grid::tile_ptr& start, const Grid::tile_ptr& goal,
-			const tag_type& tagPath, const tag_type& tagStart, const tag_type& tagGoal, Selector f)
+			const tag_type& tagPath, const tag_type& tagStart, const tag_type& tagGoal)
 		{
 			size_t angle;
 			const tag_type& tag = getTag(current, start, goal, tagPath, tagStart, tagGoal);
 
-			const pattern_t pattern = choosePattern(current, getPatterns(tag), angle, f);
+			const pattern_t pattern = choosePattern(current, getPatterns(tag), angle);
 
 			current->mergePattern(pattern, angle);
 		}
-
-		static bool constrained(const Grid::tile_ptr& current, const pattern_t& pattern, size_t& angle)
-		{
-			return current->constrained(pattern, angle);
-		}
-
-		static bool compatible(const Grid::tile_ptr& current, const pattern_t& pattern, size_t& angle)
-		{
-			return current->compatible(pattern, angle);
-		}
-
 
 		class interrupted : public std::exception {};
 
@@ -286,14 +294,14 @@ namespace ProceduralGen
 				current->setContraintTo(*next, linkingElement);
 				next->setContraintTo(*current, linkingElement);
 			}
-			catch (VectorMath::cannot_choose_in_empty_range)
+			catch (VectorMath::cannot_choose_in_empty_range&)
 			{
 				current = goal;
 				next = goal;
 				throw interrupted{};
 			}
 
-			getAndApplyPattern(current, start, goal, tagPath, tagStart, tagGoal, constrained);
+			getAndApplyPattern(current, start, goal, tagPath, tagStart, tagGoal);
 
 			current = next;
 
@@ -320,7 +328,7 @@ namespace ProceduralGen
 					return;
 				}
 			}
-			getAndApplyPattern(current, start, goal, tagPath, tagStart, tagGoal, constrained);
+			getAndApplyPattern(current, start, goal, tagPath, tagStart, tagGoal);
 		}
 
 		void buildPath(Grid& grid, tag_type tagStart, tag_type tagGoal, tag_type tagPath, Grid::tile_type::pattern_t::element_t linkingElement,
@@ -375,15 +383,17 @@ namespace ProceduralGen
 				current->setContraintTo(*next, linkingElement);
 				next->setContraintTo(*current, linkingElement);
 			}
-			catch (VectorMath::cannot_choose_in_empty_range)
+			catch (VectorMath::cannot_choose_in_empty_range&)
 			{
 				throw interrupted{};
 			}
 
 			const pattern_t pattern = getAndApplyPattern(current, tag);
 
-			currentRiverSize += static_cast<size_t>(!pattern.center.isDefault());
-			currentRiverSize += VectorMath::count_if(pattern.externalRing, [](const Grid::tile_type::pattern_t::element_t& element) { return !element.isDefault(); });
+			for (size_t i = 0; i != pattern.data.size(); ++i)
+			{
+				currentRiverSize += VectorMath::count_if(pattern.data[i], [](const Grid::tile_type::pattern_t::element_t& element) {return !element.isDefault(); });
+			}
 
 			current = next;
 		}

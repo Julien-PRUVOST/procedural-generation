@@ -31,9 +31,10 @@ namespace ProceduralGen
 		getline(input, subLine, ' ');
 		tile.tag = subLine;
 
+		tile.constraints.push_back({});
 		for (int i = 0; i < 6 && getline(input, subLine, ' '); ++i)
 		{
-			tile.constraints.push_back(subLine[0]);
+			tile.constraints[0].push_back(subLine[0]);
 		}
 
 		tile.data.push_back({});

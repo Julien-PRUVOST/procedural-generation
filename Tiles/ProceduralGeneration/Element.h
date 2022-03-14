@@ -39,8 +39,9 @@ namespace ProceduralGen
 
 		value_t val{};
 
+	public:
 		bool operator==(const Element& other) const {
-			return val == other.val;
+			return value() == other.value();
 		}
 
 		bool operator!=(const Element& other) const {
@@ -48,8 +49,6 @@ namespace ProceduralGen
 		}		
 
 	public:
-		
-
 		Element() = default;
 		~Element() = default;
 
@@ -72,7 +71,7 @@ namespace ProceduralGen
 			return val;
 		}
 
-		bool constrained(const Element& other) const
+		bool constraining(const Element& other) const
 		{
 			return isDefault() || *this == other;
 		}
@@ -99,9 +98,9 @@ namespace ProceduralGen
 	};
 
 	template <class T>
-	bool constrained(const Element<T>& element, const Element<T>& other)
+	bool constraining(const Element<T>& element, const Element<T>& other)
 	{
-		return element.constrained(other);
+		return element.constraining(other);
 	}
 
 	template <class T>

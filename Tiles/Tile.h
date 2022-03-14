@@ -60,14 +60,9 @@ namespace ProceduralGenerationImplementation
 			tags.push_back(newPattern.tag);
 		}
 
-		bool constrained(const pattern_t& newPattern, size_t& angle) const
+		vector<size_t> getCompatibleAngles(const pattern_t &newPattern) const
 		{
-			return pattern.compatible(newPattern, angle);
-		}
-
-		bool compatible(const pattern_t &newPattern, size_t &angle) const
-		{
-			return pattern.compatible(newPattern, angle);
+			return pattern.getCompatibleAngles(newPattern);
 		}
 
 		void mergePattern(const pattern_t& newPattern, const size_t& angle)
@@ -79,7 +74,7 @@ namespace ProceduralGenerationImplementation
 		void setContraintTo(const Tile& other, typename pattern_t::element_t element)
 		{
 			const size_t angle = getTileAngleTo(other);
-			pattern.constraints[angle] = element;
+			pattern.constraints[0][angle] = element;
 		}
 #pragma endregion
 
@@ -100,7 +95,7 @@ namespace ProceduralGenerationImplementation
 
 		void erase()
 		{
-			setPattern({ {}, {{}, {} ,{}, {}, {}, {}}, {{{}, {} ,{}, {}, {}, {}}, {{}}}, {} });
+			setPattern({ {}, {{{}, {} ,{}, {}, {}, {}}}, {{{}, {} ,{}, {}, {}, {}}, {{}}}, {} });
 			tags.clear();
 		}
 

@@ -17,7 +17,7 @@ namespace ProceduralGen
 
 		tag_t tag {};
 
-		vector<element_t> constraints {};
+		vector<vector<element_t>> constraints {};
 		vector<vector<element_t>> data {};
 
 		size_t weight{}; // TODO : Maybe should not be in the pattern
@@ -26,72 +26,54 @@ namespace ProceduralGen
 		using iterator = typename vector<element_t>::iterator;
 		using const_iterator = typename vector<element_t>::const_iterator;
 
-		static bool constrainedWhenFixed(const_iterator& begin, const const_iterator& end, const_iterator& otherBegin)
+		static bool constraining(const_iterator begin, const const_iterator end, const_iterator otherBegin)
 		{
-			return VectorMath::compare(begin, end, otherBegin,
-				[](const element_t& a, const element_t& b) {return a.constrained(b); }) == end;
+			return VectorMath::compare(begin, end, otherBegin, &ProceduralGen::constraining<element_t>) == end;
 		}
 
-		static bool compatibleWhenFixed(const_iterator& begin, const const_iterator& end, const_iterator& otherBegin)
+		static bool compatible(const_iterator begin, const const_iterator end, const_iterator otherBegin)
 		{
-			return VectorMath::compare(begin, end, otherBegin,
-				[](const element_t& a, const element_t& b) {return a.compatible(b); }) == end;
+			return VectorMath::compare(begin, end, otherBegin, &ProceduralGen::compatible<element_t>) == end;
 		}
 
 		template <class Predicate>
-		bool testingAllRotations(const vector<element_t>& otherConstraints, const vector<vector<element_t>>& otherData, size_t& angle, Predicate f)
+		static bool testRotation(const vector<vector<element_t>>& v0, const vector<vector<element_t>>& v1, const size_t& angle, Predicate pred)
 		{
-			for (size_t iAngle = 0; iAngle != constraints.size(); ++iAngle)
+			return VectorMath::compare(v0.begin(), v0.end(), v1.begin(), [&pred, &angle](const vector<element_t>& ring0, const vector<element_t>& ring1)
 			{
-				if (f(constraints.begin(), constraints.end(), VectorMath::rotate(otherConstraints, iAngle).begin()))
-				{
-					bool found = true;
-					for (size_t j = 0; j != data.size(); ++j)
-					{
-						if (!f(data[j].begin(), data[j].end(), VectorMath::rotate(otherData[j], iAngle).begin()))
-						{
-							found = false;
-							break;
-						}
-					}
-
-					if (found)
-					{
-						angle = iAngle;
-						return true;
-					}
-				}
-			}
-			return false;
+				return pred(ring0.begin(), ring0.end(), VectorMath::rotate(ring1, angle).begin());
+			}) == v0.end();
 		}
 
-		static bool empty(const vector<vector<element_t>>& otherData)
+		template <class Predicate>
+		static vector<size_t> testAllRotations(const vector<vector<element_t>>& v0, const vector<vector<element_t>>& v1, Predicate pred)
 		{
-			for (const auto& dataVector : otherData)
+			vector<size_t> angles;
+			// Todo : We detetct the number of rotations to perform from v0[0]. We should not
+			for (size_t angle = 0; angle != v0[0].size(); ++angle)
 			{
-				for (const auto& element : dataVector)
-				{
-					if (!element.isDefault())
-						return false;
-				}
+				if (testRotation(v0, v1, angle, pred))
+					angles.push_back(angle);
 			}
-			return true;
+			return angles;
 		}
 
-		bool constrained(const vector<element_t>& otherConstraints, const vector<vector<element_t>>& otherData, size_t& angle) const
+		vector<size_t> getCompatibleAngles(const vector<vector<element_t>>& otherConstraints, const vector<vector<element_t>>& otherData) const
 		{
-			return compatible(otherConstraints, otherData, angle);
-			// return testingAllRotations(otherConstraints, otherData, angle, Pattern::constrainedWhenFixed);
-		}
-
-		bool compatible(const vector<element_t>& otherConstraints, const vector<vector<element_t>>& otherData, size_t& angle) const
-		{
-			bool result = false;
-			if (empty(otherData))
+			vector<size_t> anglesConstrained;
+			for (size_t i = 0; i != constraints.size(); ++i)
 			{
-				result = result || testingAllRotations(otherConstraints, otherData, angle,Pattern::compatibleWhenFixed);
+				anglesConstrained = testAllRotations(constraints, otherConstraints, &Pattern::constraining);
 			}
-			return result || testingAllRotations(otherConstraints, otherData, angle, Pattern::constrainedWhenFixed);
+
+			vector<size_t> anglesConstrainedAndCompatible;
+			for (const size_t& angleConstrained : anglesConstrained)
+			{
+				if (testRotation(data, otherData, angleConstrained, &Pattern::compatible))
+					anglesConstrainedAndCompatible.push_back(angleConstrained);
+			}
+
+			return anglesConstrainedAndCompatible;
 		}
 
 
@@ -101,7 +83,7 @@ namespace ProceduralGen
 
 			vector<element_t> outputRing{};
 
-			for (decltype(distance) i = 0; i != distance; ++i)
+			for (size_t i = 0; i != distance; ++i)
 			{
 				outputRing.push_back(ProceduralGen::merge(*(begin + i), *(otherBegin + i)));
 			}
@@ -109,26 +91,27 @@ namespace ProceduralGen
 			return outputRing;
 		}
 
-		void merge(const vector<element_t>& otherConstraints, const vector<vector<element_t>>& otherData, const size_t& angle)
+		void merge(const vector<vector<element_t>>& otherConstraints, const vector<vector<element_t>>& otherData, const size_t& angle)
 		{
-			constraints = merge(constraints.begin(), constraints.end(), VectorMath::rotate(otherConstraints, angle).begin());
 
-			for (size_t j = 0; j!= data.size(); ++j)
+			for (size_t i = 0; i != constraints.size(); ++i)
 			{
-				data[j] = merge(data[j].begin(), data[j].end(), VectorMath::rotate(otherConstraints, angle).begin());
+				for (size_t j = 0; j != constraints[i].size(); ++j)
+				{
+					constraints[i][j] = element_t{};
+				}
+			}
+
+			for (size_t i = 0; i!= data.size(); ++i)
+			{
+				data[i] = merge(data[i].begin(), data[i].end(), VectorMath::rotate(otherData[i], angle).begin());
 			}
 		}
 
 	public:
-		bool constrained(const Pattern& other, size_t& angle) const
+		vector<size_t> getCompatibleAngles(const Pattern &other) const
 		{
-			return constrained(other.constraints, other.data, angle);
-		}
-
-		/// If true, change the angle to make the rings match. \n If false, leave the angle as it was.
-		bool compatible(const Pattern &other, size_t &angle) const
-		{
-			return constrained(other.constraints, other.data, angle);
+			return getCompatibleAngles(other.constraints, other.data);
 		}
 
 		void merge(const Pattern& other, const size_t& angle)

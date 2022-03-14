@@ -13,6 +13,17 @@ River R . R . . ., R R R . . ., ., 3
 River R . . R . ., R R R R . ., ., 1
 River R . . . R ., R R R R R ., ., 1
 
+PathEnd C . . . . ., C . . . . ., C, 5
+
+Path C C . . . ., C C . . . ., C, 2
+Path C . C . . ., C . C . . ., C, 2
+Path C . . C . ., C . . C . ., C, 2
+
+Path C C . . . ., C C . . . ., ., 3
+Path C . C . . ., C C C . . ., ., 3
+Path C . . C . ., C C C C . ., ., 1
+Path C . . . C ., C C C C C ., ., 1
+
 Mine . . . . . ., M M M M . ., M, 2 3
 Campfire . . . . . ., C . . . . ., F, 3
 Building C . . . . ., B B B B B B, B, 1
