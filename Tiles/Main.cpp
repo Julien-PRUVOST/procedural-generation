@@ -30,7 +30,7 @@ int main()
 		gen.buildPath(grid, "PathEnd", "PathEnd", "Path", 'C', nullptr, nullptr, condition, condition, condition);
 		gen.buildPath(grid, "PathEnd", "PathEnd", "Path", 'C', nullptr, nullptr, condition, condition, condition);*/
 
-		// gen.buildRiver(grid, "RiverEnd", "RiverEnd", "River", 'R', 30);
+		gen.buildRiver(grid, "RiverEnd", "RiverEnd", "River", 'R', 30);
 		gen.populate(grid, { "Mine", "Campfire", "Building", "Void" });
 	}
 	catch(...)

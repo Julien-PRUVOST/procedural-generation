@@ -45,7 +45,7 @@ namespace printer
 
 				print(os, tile->getPattern().data[0][3], valid ? '.' : ' ');
 				os << " ";
-				print(os, tile->getPattern().data[1][0], valid ? '.' : ' ');
+				print(os, tile->getPattern().data[1][0], valid ? '•' : ' ');
 				os << " ";
 				print(os, tile->getPattern().data[0][0], valid ? '.' : ' ');
 				os << " ";

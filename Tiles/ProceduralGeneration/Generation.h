@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include <map>
-#include <memory>
 #include <random>
 #include <utility>
 #include <vector>
@@ -27,7 +26,7 @@ namespace ProceduralGen
 	{
 	public:
 		using pattern_t = Pattern;
-		using pattern_ptr = std::shared_ptr<pattern_t>;
+		using pattern_ptr = pattern_t*;
 
 		using tag_type = typename pattern_t::tag_t;
 
@@ -153,18 +152,21 @@ namespace ProceduralGen
 
 #pragma region Build
 	private:
-		static vector<pattern_t> getPatterns(const Grid::tile_ptr& current, const vector<pattern_t>& patterns, vector<size_t>& outPatternAngles)
+		struct PatternInfo
 		{
-			vector<pattern_t> correctPatterns;
+			pattern_t pattern;
+			typename pattern_t::RotationInfo rotationInfo;
+		};
+
+		static vector<PatternInfo> getPatterns(const Grid::tile_ptr current, const vector<pattern_t>& patterns)
+		{
+			vector<PatternInfo> correctPatterns;
 
 			for (size_t i = 0; i != patterns.size(); ++i)
 			{
-				current->getCompatibleAngles(patterns[i]);
-
-				for (const size_t& angle : current->getCompatibleAngles(patterns[i]))
+				for (const auto& rotationInfo : current->getCompatibilityInfo(patterns[i]))
 				{
-					correctPatterns.push_back(patterns[i]);
-					outPatternAngles.push_back(angle);
+					correctPatterns.push_back({ patterns[i], rotationInfo });
 				}
 			}
 
@@ -175,43 +177,41 @@ namespace ProceduralGen
 		class pattern_not_found final : public std::exception {};
 
 	private:
-		pattern_t choosePattern(const Grid::tile_ptr& current, const vector<pattern_t>& patterns, size_t& outAngle)
+		PatternInfo choosePattern(const Grid::tile_ptr& current, const vector<pattern_t>& patterns)
 		{
-			vector<size_t> patternAngles;
-			const vector<pattern_t> availablePatterns = getPatterns(current, patterns, patternAngles);
+			vector<typename pattern_t::RotationInfo> patternAngles;
+			const vector<PatternInfo> compatiblePatternsInfo = getPatterns(current, patterns);
 
-			if (!availablePatterns.empty())
+			if (!compatiblePatternsInfo.empty())
 			{
 				vector<size_t> probability;
-				for (const auto& pattern : availablePatterns)
+
+				for (const auto& patternInfo : compatiblePatternsInfo)
 				{
-					probability.push_back(pattern.weight);
+					probability.push_back(patternInfo.pattern.weight);
 				}
 
 				const size_t index = VectorMath::chooseIndex(probability, prng);
 
-				outAngle = patternAngles[index];
-				return availablePatterns[index];
+				return compatiblePatternsInfo[index];
 			}
 
 			throw pattern_not_found{};
 		}
 
-		static void merge(Grid::tile_ptr& current, const pattern_t& pattern, size_t angle)
+		static void merge(Grid::tile_ptr& current, const pattern_t& pattern, typename pattern_t::RotationInfo& rotationInfo)
 		{
-			current->mergePattern(pattern, angle);
+			current->mergePattern(pattern, rotationInfo);
 		}
 
 		template <class Tag>
-		pattern_t getAndApplyPattern(Grid::tile_ptr& current, const Tag& tag)
+		PatternInfo getAndApplyPattern(Grid::tile_ptr& current, const Tag& tag)
 		{
-			size_t angle;
+			PatternInfo patternInfo = choosePattern(current, getPatterns(tag));
 
-			pattern_t pattern = choosePattern(current, getPatterns(tag), angle);
+			merge(current, patternInfo.pattern, patternInfo.rotationInfo);
 
-			merge(current, pattern, angle);
-
-			return pattern;
+			return patternInfo;
 		}
 
 #pragma endregion
@@ -287,7 +287,7 @@ namespace ProceduralGen
 			return tagPath;
 		}
 
-		pattern_t getAndApplyPattern(Grid::tile_ptr& current, const Grid::tile_ptr& start, const Grid::tile_ptr& goal,
+		PatternInfo getAndApplyPattern(Grid::tile_ptr& current, const Grid::tile_ptr& start, const Grid::tile_ptr& goal,
 			const tag_type& tagPath, const tag_type& tagStart, const tag_type& tagGoal)
 		{
 			const tag_type& tag = getTag(current, start, goal, tagPath, tagStart, tagGoal);
@@ -402,11 +402,11 @@ namespace ProceduralGen
 				throw interrupted{};
 			}
 
-			const pattern_t pattern = getAndApplyPattern(current, tag);
+			PatternInfo patternInfo = getAndApplyPattern(current, tag);
 
-			for (size_t i = 0; i != pattern.data.size(); ++i)
+			for (size_t i = 0; i != patternInfo.pattern.data.size(); ++i)
 			{
-				currentRiverSize += VectorMath::count_if(pattern.data[i], [](const Grid::tile_type::pattern_t::element_t& element) {return !element.isDefault(); });
+				currentRiverSize += VectorMath::count_if(patternInfo.pattern.data[i], [](const Grid::tile_type::pattern_t::element_t& element) {return !element.isDefault(); });
 			}
 
 			current = next;

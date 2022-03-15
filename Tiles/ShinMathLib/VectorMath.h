@@ -165,7 +165,7 @@ namespace shinmathlib {
 		}
 
 		template <class Container>
-		static Container rotate(const Container& in, const size_t& n)
+		Container rotate(const Container& in, const size_t& n)
 		{
 			Container result;
 			result.reserve(in.size());
@@ -191,6 +191,18 @@ namespace shinmathlib {
 			return compare(v.begin(), v.end(), w.begin(), f);
 		}
 
+		template <class Container>
+		Container& reverse_inplace(Container& in)
+		{
+			std::reverse(in.begin(), in.end());
+			return in;
+		}
+
+		template <class Container>
+		Container reverse(Container in)
+		{
+			return reverse_inplace(in);
+		}
 	}
 
 }

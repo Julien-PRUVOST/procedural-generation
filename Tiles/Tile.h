@@ -58,14 +58,14 @@ namespace ProceduralGenerationImplementation
 			tags.push_back(newPattern.tag);
 		}
 
-		vector<size_t> getCompatibleAngles(const pattern_t &newPattern) const
+		vector<typename pattern_t::RotationInfo> getCompatibilityInfo(const pattern_t& newPattern) const
 		{
-			return pattern.getCompatibleAngles(newPattern);
+			return pattern.getCompatibilityInfo(newPattern);
 		}
 
-		void mergePattern(const pattern_t& newPattern, const size_t& angle)
+		void mergePattern(const pattern_t& newPattern, const typename pattern_t::RotationInfo& rotationInfo)
 		{
-			pattern.merge(newPattern, angle);
+			pattern.merge(newPattern, rotationInfo);
 
 			if (std::find(tags.begin(), tags.end(), newPattern.tag) == tags.end())
 				tags.push_back(newPattern.tag);

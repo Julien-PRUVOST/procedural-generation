@@ -59,38 +59,51 @@ namespace ProceduralGen
 			return angles;
 		}
 
-		vector<size_t> getCompatibleAngles(const vector<vector<element_t>>& otherConstraints, const vector<vector<element_t>>& otherData) const
+		vector<size_t> testRotations(const Pattern& other) const
 		{
-			const vector<size_t> anglesConstrained = testAllRotations(constraints, otherConstraints, &Pattern::constraining);
+			const vector<size_t> anglesConstrained = testAllRotations(constraints, other.constraints, &Pattern::constraining);
 
 			vector<size_t> anglesConstrainedAndCompatible;
 			for (const size_t& angleConstrained : anglesConstrained)
 			{
-				if (testRotation(data, otherData, angleConstrained, &Pattern::compatible))
+				if (testRotation(data, other.data, angleConstrained, &Pattern::compatible))
 					anglesConstrainedAndCompatible.push_back(angleConstrained);
 			}
 
 			return anglesConstrainedAndCompatible;
 		}
 
-
-		static vector<element_t> merge(const const_iterator& begin, const const_iterator& end, const const_iterator& otherBegin)
+		static vector<element_t> flip(vector<element_t> ring)
 		{
-			auto distance = std::distance(begin, end);
-
-			vector<element_t> outputRing{};
-
-			for (size_t i = 0; i != distance; ++i)
-			{
-				outputRing.push_back(ProceduralGen::merge(*(begin + i), *(otherBegin + i)));
-			}
-
-			return outputRing;
+			return VectorMath::reverse_inplace(ring);
 		}
 
-		void merge(const vector<vector<element_t>>& otherConstraints, const vector<vector<element_t>>& otherData, const size_t& angle)
+		static vector<vector<element_t>> flip(const vector<vector<element_t>>& informations)
 		{
+			vector<vector<element_t>> flippedInformations;
 
+			for (const auto& ring : informations)
+			{
+				flippedInformations.push_back(flip(ring));
+			}
+
+			return flippedInformations;
+		}
+
+		Pattern flip() const
+		{
+			auto otherConstraints = flip(constraints);
+			auto otherData = flip(data);
+
+			return{	tag,
+						otherConstraints,
+						otherData,
+						weight};
+		}
+
+
+		void eraseConstraints()
+		{
 			for (size_t i = 0; i != constraints.size(); ++i)
 			{
 				for (size_t j = 0; j != constraints[i].size(); ++j)
@@ -98,22 +111,67 @@ namespace ProceduralGen
 					constraints[i][j] = element_t{};
 				}
 			}
+		}
 
-			for (size_t i = 0; i!= data.size(); ++i)
+		static vector<element_t> merge(const const_iterator& begin, const const_iterator& end, const const_iterator& otherBegin)
+		{
+			auto distance = std::distance(begin, end);
+
+			vector<element_t> outputRing{};
+
+			for (decltype(distance) i = 0; i != distance; ++i)
 			{
-				data[i] = merge(data[i].begin(), data[i].end(), VectorMath::rotate(otherData[i], angle).begin());
+				outputRing.push_back(ProceduralGen::merge(*(begin + i), *(otherBegin + i)));
+			}
+
+			return outputRing;
+		}
+
+	public:
+		struct RotationInfo
+		{
+			size_t angle;
+			bool flipped;
+		};
+
+	private:
+		void mergeData(vector<vector<element_t>> otherData, const RotationInfo& rotationInfo)
+		{
+			if (rotationInfo.flipped)
+				otherData = flip(otherData);
+
+			for (size_t i = 0; i != data.size(); ++i)
+			{
+				data[i] = merge(data[i].begin(), data[i].end(), VectorMath::rotate(otherData[i], rotationInfo.angle).begin());
 			}
 		}
 
 	public:
-		vector<size_t> getCompatibleAngles(const Pattern &other) const
+		vector<RotationInfo> getCompatibilityInfo(const Pattern& other) const
 		{
-			return getCompatibleAngles(other.constraints, other.data);
+			vector<RotationInfo> result;
+
+			const vector<size_t> angles = testRotations(other);
+
+			for (const size_t& angle : angles)
+			{
+				result.push_back({ angle, false });
+			}
+
+			const vector<size_t> anglesOfFlippedPatterns = testRotations(other.flip());
+
+			for (const size_t& angleOfFlippedPattern : anglesOfFlippedPatterns)
+			{
+				result.push_back({ angleOfFlippedPattern, true });
+			}
+
+			return result;
 		}
 
-		void merge(const Pattern& other, const size_t& angle)
+		void merge(const Pattern& other, const RotationInfo& rotationInfo)
 		{
-			merge(other.constraints, other.data, angle);
+			eraseConstraints();
+			mergeData(other.data, rotationInfo);
 		}
 	};
 }
