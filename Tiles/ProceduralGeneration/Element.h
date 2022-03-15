@@ -73,7 +73,7 @@ namespace ProceduralGen
 
 		bool constraining(const Element& other) const
 		{
-			return isDefault() || *this == other;
+			return other.isDefault() || *this == other;
 		}
 
 		bool compatible(const Element& other) const

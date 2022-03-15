@@ -93,9 +93,12 @@ namespace ProceduralGen
 
 	public:
 		// template <class Grid>
-		void populate(Grid &grid)
+		void populate(Grid &grid, vector<tag_type> tags)
 		{
-			
+			for (auto& tile : grid.getValidTiles())
+			{
+				getAndApplyPattern(tile, tags);
+			}
 		}
 
 	public:
@@ -128,6 +131,18 @@ namespace ProceduralGen
 			return tiles[tag];
 		}
 
+		vector<pattern_t> getPatterns(const vector<tag_type>& tags)
+		{
+			vector<pattern_t> result;
+
+			for(const auto& tag : tags)
+			{
+				vector<pattern_t>& patterns = getPatterns(tag);
+				result.insert(result.end(), patterns.begin(), patterns.end());
+			}
+			return result;
+		}
+
 		static void eraseGrid(Grid &grid)
 		 {
 			 for (auto tile : grid.grid)
@@ -136,21 +151,74 @@ namespace ProceduralGen
 			 }
 		 }
 
-#pragma region Path
+#pragma region Build
 	private:
-		/// Unused
-		static vector<float> getAngles(const Grid::tile_ptr& referenceTile, const vector<Grid::tile_ptr>& neighbors)
+		static vector<pattern_t> getPatterns(const Grid::tile_ptr& current, const vector<pattern_t>& patterns, vector<size_t>& outPatternAngles)
 		{
-			vector<float> angles;
+			vector<pattern_t> correctPatterns;
 
-			for (const auto& neighbor : neighbors)
+			for (size_t i = 0; i != patterns.size(); ++i)
 			{
-				angles.push_back(referenceTile->getAngleDegreesTo(*neighbor));
+				current->getCompatibleAngles(patterns[i]);
+
+				for (const size_t& angle : current->getCompatibleAngles(patterns[i]))
+				{
+					correctPatterns.push_back(patterns[i]);
+					outPatternAngles.push_back(angle);
+				}
 			}
 
-			return angles;
+			return correctPatterns;
 		}
 
+	public:
+		class pattern_not_found final : public std::exception {};
+
+	private:
+		pattern_t choosePattern(const Grid::tile_ptr& current, const vector<pattern_t>& patterns, size_t& outAngle)
+		{
+			vector<size_t> patternAngles;
+			const vector<pattern_t> availablePatterns = getPatterns(current, patterns, patternAngles);
+
+			if (!availablePatterns.empty())
+			{
+				vector<size_t> probability;
+				for (const auto& pattern : availablePatterns)
+				{
+					probability.push_back(pattern.weight);
+				}
+
+				const size_t index = VectorMath::chooseIndex(probability, prng);
+
+				outAngle = patternAngles[index];
+				return availablePatterns[index];
+			}
+
+			throw pattern_not_found{};
+		}
+
+		static void merge(Grid::tile_ptr& current, const pattern_t& pattern, size_t angle)
+		{
+			current->mergePattern(pattern, angle);
+		}
+
+		template <class Tag>
+		pattern_t getAndApplyPattern(Grid::tile_ptr& current, const Tag& tag)
+		{
+			size_t angle;
+
+			pattern_t pattern = choosePattern(current, getPatterns(tag), angle);
+
+			merge(current, pattern, angle);
+
+			return pattern;
+		}
+
+#pragma endregion
+
+
+#pragma region Path
+	private:
 		static vector<float> getRelativeAngles(const Grid::tile_ptr &referenceTile, float referenceAngle, const vector<Grid::tile_ptr> &neighbors)
 		{
 			vector<float> angles;
@@ -164,9 +232,9 @@ namespace ProceduralGen
 			return angles;
 		}
 
-		static void filterNeighbors(vector<Grid::tile_ptr> &neighbors, vector<float>& relativeAngles, float threshold = 360.0f)
+		static void filterNeighbors(vector<Grid::tile_ptr> &neighbors, vector<float>& relativeAngles, float angeThreshold = 360.0f)
 		{
-			const vector<size_t> indices = VectorMath::filteredIndex(relativeAngles, [&threshold](const float& angle) { return std::abs(angle) > threshold; });
+			const vector<size_t> indices = VectorMath::filteredIndex(relativeAngles, [&angeThreshold](const float& angle) { return std::abs(angle) > angeThreshold; });
 
 			VectorMath::eraseByIndex(relativeAngles, indices);
 			VectorMath::eraseByIndex(neighbors, indices);			
@@ -181,13 +249,13 @@ namespace ProceduralGen
 				return {};
 			}
 
-			float range = std::max(0.0f, *std::max_element(relativeAngles.begin(), relativeAngles.end())) - std::min(0.0f, *std::min_element(relativeAngles.begin(), relativeAngles.end()));
+			const float range = std::max(0.0f, *std::max_element(relativeAngles.begin(), relativeAngles.end())) - std::min(0.0f, *std::min_element(relativeAngles.begin(), relativeAngles.end()));
 
 			const float min = *std::min_element(relativeAngles.begin(), relativeAngles.end());
 
-			for (size_t i = 0; i != relativeAngles.size(); ++i)
+			for (const float relativeAngle : relativeAngles)
 			{
-				probability.push_back(range - (relativeAngles[i] - min));
+				probability.push_back(range - (relativeAngle - min));
 			}
 
 			return probability;
@@ -211,49 +279,6 @@ namespace ProceduralGen
 			return *VectorMath::choose(neighbors, probability, prng);
 		}
 
-		static vector<pattern_t> getPatterns(const Grid::tile_ptr& current, const vector<pattern_t>& patterns, vector<size_t>& outTileAngles)
-		{
-			vector<pattern_t> correctPatterns;
-
-			for (size_t i = 0; i != patterns.size(); ++i)
-			{
-				vector<size_t> compatibleAngles = current->getCompatibleAngles(patterns[i]);
-
-				for (const size_t& angle : compatibleAngles)
-				{
-					correctPatterns.push_back(patterns[i]);
-					outTileAngles.push_back(angle);
-				}
-			}
-
-			return correctPatterns;
-		}
-
-		class pattern_not_found final : public std::exception {};
-
-		pattern_t choosePattern(const Grid::tile_ptr& current, const vector<pattern_t>& patterns, size_t &outAngle)
-		{
-			vector<size_t> tileAngles;
-
-			// Todo : I want compatible pattern on a specific order : the contraints placed must be respected, while the one added are just a bonus
-			const vector<pattern_t> availablePatterns = getPatterns(current, patterns, tileAngles);
-
-			if (!availablePatterns.empty())
-			{
-				vector<size_t> probability;
-				for (const auto& pattern : availablePatterns)
-				{
-					probability.push_back(pattern.weight);
-				}
-
-				const size_t index = VectorMath::chooseIndex(probability, prng);
-				outAngle = tileAngles[index];
-				return availablePatterns[index];
-			}
-
-			throw pattern_not_found{};
-		}
-
 		static const tag_type& getTag(const Grid::tile_ptr& current, const Grid::tile_ptr& start, const Grid::tile_ptr& goal,
 		                              const tag_type &tagPath, const tag_type& tagStart, const tag_type& tagGoal)
 		{
@@ -262,15 +287,12 @@ namespace ProceduralGen
 			return tagPath;
 		}
 
-		void getAndApplyPattern(Grid::tile_ptr& current, const Grid::tile_ptr& start, const Grid::tile_ptr& goal,
+		pattern_t getAndApplyPattern(Grid::tile_ptr& current, const Grid::tile_ptr& start, const Grid::tile_ptr& goal,
 			const tag_type& tagPath, const tag_type& tagStart, const tag_type& tagGoal)
 		{
-			size_t angle;
 			const tag_type& tag = getTag(current, start, goal, tagPath, tagStart, tagGoal);
 
-			const pattern_t pattern = choosePattern(current, getPatterns(tag), angle);
-
-			current->mergePattern(pattern, angle);
+			return getAndApplyPattern(current, tag);
 		}
 
 		class interrupted : public std::exception {};
@@ -301,7 +323,8 @@ namespace ProceduralGen
 				throw interrupted{};
 			}
 
-			getAndApplyPattern(current, start, goal, tagPath, tagStart, tagGoal);
+			const tag_type& tag = getTag(current, start, goal, tagPath, tagStart, tagGoal);
+			getAndApplyPattern(current, tag);
 
 			current = next;
 
@@ -323,7 +346,7 @@ namespace ProceduralGen
 				{
 					buildPathIteration(grid, current, start, goal, tagPath, tagStart, tagGoal, linkingElement, visited, stopCondition);
 				}
-				catch (interrupted)
+				catch (interrupted&)
 				{
 					return;
 				}
@@ -352,15 +375,6 @@ namespace ProceduralGen
 			VectorMath::eraseOncePtr(neighbors, visited);
 
 			return *VectorMath::choose(neighbors, prng);
-		}
-
-		pattern_t getAndApplyPattern(Grid::tile_ptr& current, const tag_type& tag)
-		{
-			size_t angle;
-			const pattern_t pattern = choosePattern(current, getPatterns(tag), angle);
-			current->mergePattern(pattern, angle);
-
-			return pattern;
 		}
 
 		void buildRiverIteration(Grid& grid, Grid::tile_ptr& current, const tag_type& tag, const Grid::tile_type::pattern_t::element_t& linkingElement,
@@ -415,7 +429,7 @@ namespace ProceduralGen
 				{
 					buildRiverIteration(grid, current, tag, linkingElement, currentRiverSize, visited);
 				}
-				catch (interrupted)
+				catch (interrupted&)
 				{
 					break;
 				}
@@ -431,6 +445,5 @@ namespace ProceduralGen
 		}
 
 #pragma endregion
-
 	};
 }

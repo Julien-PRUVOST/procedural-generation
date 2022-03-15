@@ -15,12 +15,12 @@ namespace Hexagonal
 
 #pragma region Static
 		/// Used in loop, to convert row / column coords to hex coords
-		static coord_type getQ(int i, int j) noexcept { return j - i / 2; }
+		static coord_type getQ(size_t i, size_t j) noexcept { return static_cast<coord_type>(j) - getR(i, j) / 2; }
 
 		/// Used in loop, to convert row / column coords to hex coords
-		static coord_type getR(int i, int j) noexcept { return i; }
+		static coord_type getR(size_t i, size_t j) noexcept { return static_cast<coord_type>(i); }
 
-		static Coord getCoord(int i, int j)
+		static Coord getCoord(size_t i, size_t j)
 		{
 			return {getQ(i, j), getR(i, j)};
 		}

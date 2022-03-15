@@ -21,14 +21,23 @@ int main()
 
 	grid.clear();
 
-	gen.buildPath(grid, "PathEnd", "PathEnd", "Path", grid.getValidTile(0), grid.getValidTile(140), 'C');
-	gen.buildPath(grid, "PathEnd", "PathEnd", "Path", grid.getValidTile(37), grid.getValidTile(117), 'C');
-	gen.buildPath(grid, "PathEnd", "PathEnd", "Path", 'C', nullptr, nullptr, condition, condition, condition);
-	/*gen.buildPath(grid, "PathEnd", "PathEnd", "Path", 'C', nullptr, nullptr, condition, condition, condition);
-	gen.buildPath(grid, "PathEnd", "PathEnd", "Path", 'C', nullptr, nullptr, condition, condition, condition);
-	gen.buildPath(grid, "PathEnd", "PathEnd", "Path", 'C', nullptr, nullptr, condition, condition, condition);*/
+	try
+	{
+		gen.buildPath(grid, "PathEnd", "PathEnd", "Path", grid.getValidTile(0), grid.getValidTile(140), 'C');
+		gen.buildPath(grid, "PathEnd", "PathEnd", "Path", grid.getValidTile(37), grid.getValidTile(117), 'C');
+		gen.buildPath(grid, "PathEnd", "PathEnd", "Path", 'C', nullptr, nullptr, condition, condition, condition);
+		/*gen.buildPath(grid, "PathEnd", "PathEnd", "Path", 'C', nullptr, nullptr, condition, condition, condition);
+		gen.buildPath(grid, "PathEnd", "PathEnd", "Path", 'C', nullptr, nullptr, condition, condition, condition);
+		gen.buildPath(grid, "PathEnd", "PathEnd", "Path", 'C', nullptr, nullptr, condition, condition, condition);*/
 
-	// gen.buildRiver(grid, "RiverEnd", "RiverEnd", "River", 'R', 30);
+		// gen.buildRiver(grid, "RiverEnd", "RiverEnd", "River", 'R', 30);
+		gen.populate(grid, { "Mine", "Campfire", "Building", "Void" });
+	}
+	catch(...)
+	{
+		printer::print("log.txt", grid);
+		throw std::exception{};
+	}
 
 	printer::print("output.txt", grid);
 }

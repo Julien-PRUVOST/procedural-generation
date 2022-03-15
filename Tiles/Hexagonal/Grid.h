@@ -13,7 +13,7 @@ namespace Hexagonal {
 	{
 	public:
 		using tile_type = Tile;
-		using tile_ptr = shared_ptr<tile_type>;
+		using tile_ptr = tile_type*;
 
 		using size_type = size_t;
 
@@ -27,7 +27,18 @@ namespace Hexagonal {
 			{
 				for (size_t j = 0; j != getWidth(); ++j)
 				{
-					grid[getIndex(i, j)] = std::make_shared<tile_type>(Coord::getCoord(i, j));
+					grid[getIndex(i, j)] = new tile_type{ Coord::getCoord(i, j) };
+				}
+			}
+		}
+
+		~Grid()
+		{
+			for (size_t i = 0; i != getHeight(); ++i)
+			{
+				for (size_t j = 0; j != getWidth(); ++j)
+				{
+					delete grid[getIndex(i, j)];
 				}
 			}
 		}
@@ -69,7 +80,7 @@ namespace Hexagonal {
 			return index - getI(index) * getWidth();
 		}
 
-		bool areValidCoordinates(size_type i, size_t j) const
+		bool areValidCoordinates(size_type i, size_type j) const
 		{
 			return 0 <= i && i < getHeight()
 				&& 0 <= j && j < getWidth();
@@ -133,7 +144,7 @@ namespace Hexagonal {
 			return validTiles;
 		}
 
-		tile_ptr getValidTile(size_t index) const
+		tile_ptr getValidTile(size_type index) const
 		{
 			size_t count = -1;
 			size_t i;

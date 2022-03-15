@@ -55,16 +55,13 @@ namespace ProceduralGen
 				if (testRotation(v0, v1, angle, pred))
 					angles.push_back(angle);
 			}
+
 			return angles;
 		}
 
 		vector<size_t> getCompatibleAngles(const vector<vector<element_t>>& otherConstraints, const vector<vector<element_t>>& otherData) const
 		{
-			vector<size_t> anglesConstrained;
-			for (size_t i = 0; i != constraints.size(); ++i)
-			{
-				anglesConstrained = testAllRotations(constraints, otherConstraints, &Pattern::constraining);
-			}
+			const vector<size_t> anglesConstrained = testAllRotations(constraints, otherConstraints, &Pattern::constraining);
 
 			vector<size_t> anglesConstrainedAndCompatible;
 			for (const size_t& angleConstrained : anglesConstrained)

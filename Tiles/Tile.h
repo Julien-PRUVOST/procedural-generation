@@ -40,8 +40,6 @@ namespace ProceduralGenerationImplementation
 		const auto& getContraints() const { return pattern.constraints; }
 		const auto& getContraints(size_t index) const { return pattern.constraints[index]; }
 
-		const auto& getCenter() const { return pattern.data[1][0]; }
-
 		float getX() const { return Hexagonal::Math::getX(getQ(), getR()); }
 		float getY() const { return Hexagonal::Math::getY(getQ(), getR()); }
 #pragma endregion
@@ -68,7 +66,9 @@ namespace ProceduralGenerationImplementation
 		void mergePattern(const pattern_t& newPattern, const size_t& angle)
 		{
 			pattern.merge(newPattern, angle);
-			tags.push_back(newPattern.tag);
+
+			if (std::find(tags.begin(), tags.end(), newPattern.tag) == tags.end())
+				tags.push_back(newPattern.tag);
 		}
 
 		void setContraintTo(const Tile& other, typename pattern_t::element_t element)
