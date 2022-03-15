@@ -143,6 +143,7 @@
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ElementRules.h" />
     <ClInclude Include="Hexagonal\Coord.h" />
     <ClInclude Include="Hexagonal\Grid.h" />
     <ClInclude Include="Hexagonal\Math.h" />

@@ -1,8 +1,16 @@
 # Default
 . 0
 
+# Incompatible with Default
+P
+
+# Correspondances
+P R
+P C
+
 # Encoding
 RiverEnd R . . . . ., R . . . . ., R, 5
+RiverEnd R . . . . ., P . . . . ., R, 5
 
 River R R . . . ., R R . . . ., R, 2
 River R . R . . ., R . R . . ., R, 2
@@ -12,6 +20,14 @@ River R R . . . ., R R . . . ., ., 3
 River R . R . . ., R R R . . ., ., 3
 River R . . R . ., R R R R . ., ., 1
 River R . . . R ., R R R R R ., ., 1
+
+River R R . . . ., R P . . . ., ., 3
+River R . R . . ., R P R . . ., ., 3
+River R . . R . ., R R P R . ., ., 1
+River R . . R . ., R R R P . ., ., 1
+River R . . . R ., R R P R R ., ., 1
+River R . . . R ., R R R P R ., ., 1
+River R . . . R ., R R R R P ., ., 1
 
 PathEnd C . . . . ., C . . . . ., C, 5
 

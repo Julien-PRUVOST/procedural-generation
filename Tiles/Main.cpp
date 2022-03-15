@@ -8,7 +8,7 @@ using namespace ProceduralGen;
 
 int main()
 {
-	GenerationProcess<Pattern<Element<char>>> gen(2);
+	GenerationProcess<Pattern<Element<char>>> gen(8);
 	deserialize(std::string{ "Tuiles.txt" }, gen);
 
 	auto condition = [](const Hexagonal::Grid::tile_ptr& current)
@@ -31,7 +31,7 @@ int main()
 		gen.buildPath(grid, "PathEnd", "PathEnd", "Path", 'C', nullptr, nullptr, condition, condition, condition);*/
 
 		gen.buildRiver(grid, "RiverEnd", "RiverEnd", "River", 'R', 30);
-		gen.populate(grid, { "Mine", "Campfire", "Building", "Void" });
+		// gen.populate(grid, { "Mine", "Campfire", "Building", "Void" });
 	}
 	catch(...)
 	{

@@ -348,6 +348,7 @@ namespace ProceduralGen
 				}
 				catch (interrupted&)
 				{
+					getAndApplyPattern(current, tagGoal);
 					return;
 				}
 			}

@@ -62,6 +62,9 @@
     <ClInclude Include="ProceduralGeneration\Element.h">
       <Filter>Source Files\ProceduralGeneration</Filter>
     </ClInclude>
+    <ClInclude Include="ElementRules.h">
+      <Filter>Source Files\ProceduralGeneration</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Tuiles.txt">

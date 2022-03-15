@@ -72,6 +72,44 @@ namespace ProceduralGen
 		}
 	}
 
+	template <class T>
+	void deserializeCorrespondingElements(std::ifstream& file, string& line)
+	{
+		while (getline(file, line) && line.find('#', 0) != 0)
+		{
+			if (line.empty()) continue;
+
+			std::istringstream input{ line };
+			string subLine;
+
+			ElementRules<Element<T>> rule;
+
+			while (std::getline(input, subLine, ' '))
+			{
+				rule.addElement(Element<T>{ subLine[0] });
+			}
+
+			Element<T>::addRule(rule);
+		}
+	}
+
+	template <class T>
+	void deserializeIncompatibleWithDefaultElements(std::ifstream& file, string& line)
+	{
+		while (getline(file, line) && line.find('#', 0) != 0)
+		{
+			if (line.empty()) continue;
+
+			std::istringstream input{ line };
+			string subLine;
+
+			while (std::getline(input, subLine, ' '))
+			{
+				Element<T>::addIncompatibleWithDefault(Element<T>{ subLine[0] });
+			}
+		}
+	}
+
 #pragma region Generation
 
 	template <class T, class Generation>
@@ -99,6 +137,16 @@ namespace ProceduralGen
 			if (line.find("# Default", 0) == 0)
 			{
 				deserializeDefaultElements<char>(file, line);
+			}
+
+			if (line.find("# Incompatible with Default", 0) == 0)
+			{
+				deserializeIncompatibleWithDefaultElements<char>(file, line);
+			}
+
+			if (line.find("# Correspondances", 0) == 0)
+			{
+				deserializeCorrespondingElements<char>(file, line);
 			}
 
 			if (line.find("# Encoding", 0) == 0)

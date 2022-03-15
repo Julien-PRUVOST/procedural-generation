@@ -1,13 +1,17 @@
 ﻿#pragma once
-#include <ostream>
 #include <vector>
+
+#include "ElementRules.h"
 
 namespace ProceduralGen
 {
 	using std::vector;
 
-	template <class value_t = char>
+	template <class T = char>
 	class Element {
+
+	public:
+		using value_t = T;
 
 	private:
 		class Config
@@ -19,21 +23,48 @@ namespace ProceduralGen
 				return instance;
 			}
 		private:
-			vector<value_t> defaultValues{ {} };
+			vector<ElementRules<Element>> rules{ vector<Element>{ Element{ value_t{} } } };
+			ElementRules<Element> ruleIncompatibleWithDefault{};
 
 			Config() = default;
+
 		public:
 			Config(Config const&) = delete;
 			void operator=(Config const&) = delete;
 
-			bool isDefault(const value_t& v)
+			void addDefaultValue(Element element)
 			{
-				return std::find(defaultValues.begin(), defaultValues.end(), v) != defaultValues.end();
+				rules[0].addElement(std::move(element));
 			}
 
-			void addDefaultValue(value_t v)
+			bool isDefault(const Element& element)
 			{
-				defaultValues.push_back(std::move(v));
+				return rules[0].contains(element);
+			}
+
+			void addRule(ElementRules<Element> elementRules)
+			{
+				rules.push_back(std::move(elementRules));
+			}
+
+			bool ruleCompatible(const Element& a, const Element& b)
+			{
+				for (const auto& rule : rules)
+				{
+					if (rule.contains(a) && rule.contains(b))
+						return true;
+				}
+				return false;
+			}
+
+			void addIncompatibleWithDefault(Element element)
+			{
+				ruleIncompatibleWithDefault.addElement(std::move(element));
+			}
+
+			bool isIncompatibleWithDefault(const Element& element)
+			{
+				return ruleIncompatibleWithDefault.contains(element);
 			}
 		};
 
@@ -52,12 +83,7 @@ namespace ProceduralGen
 		Element() = default;
 		~Element() = default;
 
-		Element(const value_t&value) {
-			if (isDefault(value))
-				val = value_t{};
-			else
-				val = value_t{value};
-		}
+		Element(const value_t& value) : val { value } {	}
 
 		Element(const Element& other) : val{ other.val } {}
 
@@ -78,22 +104,33 @@ namespace ProceduralGen
 
 		bool compatible(const Element& other) const
 		{
-			return isDefault() || other.isDefault() || *this == other;
+			return (isDefault() && !other.isIncompatibleWithDefault()) || (other.isDefault() && !isIncompatibleWithDefault()) || *this == other || Config::getInstance().ruleCompatible(*this, other);
 		}
 
-		static void addDefaultValue(value_t val)
+		static void addDefaultValue(Element element)
 		{
-			if (!isDefault(val))
-				Config::getInstance().addDefaultValue(std::move(val));
+			if (!element.isDefault())
+				Config::getInstance().addDefaultValue(std::move(element));
 		}
 
-		static bool isDefault(const value_t& val) {
-			return Config::getInstance().isDefault(val);
+		static void addRule(ElementRules<Element> elementRules)
+		{
+			Config::getInstance().addRule(std::move(elementRules));
 		}
 
 		bool isDefault() const
 		{
-			return isDefault(val);
+			return Config::getInstance().isDefault(*this);
+		}
+
+		static void addIncompatibleWithDefault(Element element)
+		{
+			Config::getInstance().addIncompatibleWithDefault(std::move(element));
+		}
+
+		bool isIncompatibleWithDefault() const
+		{
+			return Config::getInstance().isIncompatibleWithDefault(*this);
 		}
 	};
 
@@ -112,8 +149,8 @@ namespace ProceduralGen
 	template <class T>
 	Element<T> merge(const Element<T>& element, const Element<T>& other)
 	{
-		if (element.isDefault())
-			return other;
-		return element;
+		if (other.isDefault())
+			return element;
+		return other;
 	}
 }

@@ -28,12 +28,12 @@ namespace ProceduralGen
 
 		static bool constraining(const_iterator begin, const const_iterator end, const_iterator otherBegin)
 		{
-			return VectorMath::compare(begin, end, otherBegin, &ProceduralGen::constraining<element_t>) == end;
+			return VectorMath::compare(begin, end, otherBegin, &ProceduralGen::constraining<typename element_t::value_t>) == end;
 		}
 
 		static bool compatible(const_iterator begin, const const_iterator end, const_iterator otherBegin)
 		{
-			return VectorMath::compare(begin, end, otherBegin, &ProceduralGen::compatible<element_t>) == end;
+			return VectorMath::compare(begin, end, otherBegin, &ProceduralGen::compatible<typename element_t::value_t>) == end;
 		}
 
 		template <class Predicate>
