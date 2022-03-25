@@ -26,13 +26,13 @@ namespace shinmathlib {
 		}
 
 		template<class T>
-		auto choose(const std::vector<T>& v, std::mt19937& prng)
+		auto choose(std::vector<T>& v, std::mt19937& prng)
 		{
 			return std::next(v.begin(), chooseIndex(v.size(), prng));
 		}
 
 		template<class T>
-		auto choose(const std::vector<T>& v, const std::vector<float>& probability, std::mt19937& prng)
+		auto choose(std::vector<T>& v, const std::vector<float>& probability, std::mt19937& prng)
 		{
 			return std::next(v.begin(), chooseIndex(probability, prng));
 		}

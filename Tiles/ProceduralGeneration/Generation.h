@@ -177,11 +177,8 @@ namespace ProceduralGen
 		class pattern_not_found final : public std::exception {};
 
 	private:
-		PatternInfo choosePattern(const Grid::tile_ptr& current, const vector<pattern_t>& patterns)
+		PatternInfo choosePattern(vector<PatternInfo>& compatiblePatternsInfo)
 		{
-			vector<typename pattern_t::RotationInfo> patternAngles;
-			const vector<PatternInfo> compatiblePatternsInfo = getPatterns(current, patterns);
-
 			if (!compatiblePatternsInfo.empty())
 			{
 				vector<size_t> probability;
@@ -198,6 +195,15 @@ namespace ProceduralGen
 
 			throw pattern_not_found{};
 		}
+
+		PatternInfo choosePattern(const Grid::tile_ptr& current, const vector<pattern_t>& patterns)
+		{
+			vector<PatternInfo> compatiblePatternsInfo = getPatterns(current, patterns);
+
+			return choosePattern(compatiblePatternsInfo);
+		}
+
+		
 
 		static void merge(Grid::tile_ptr& current, const pattern_t& pattern, typename pattern_t::RotationInfo& rotationInfo)
 		{
@@ -369,17 +375,43 @@ namespace ProceduralGen
 
 #pragma region River
 	private:
-		Grid::tile_ptr getNextTileInRiver(Grid& grid, const Grid::tile_ptr& current, const vector<Grid::tile_ptr>& visited)
+		Grid::tile_ptr getNextTileInRiver(Grid& grid, Grid::tile_ptr& current, const tag_type& tag, const tag_type& tagEnd, const Grid::tile_type::pattern_t::element_t& linkingElement, size_t& currentRiverSize, size_t riverMinLength, const vector<Grid::tile_ptr>& visited)
 		{
 			vector<Grid::tile_ptr> neighbors = grid.getValidNeighbors(*current);
 
 			VectorMath::eraseOncePtr(neighbors, visited);
 
-			return *VectorMath::choose(neighbors, prng);
+			const tag_type& usedTag = currentRiverSize < riverMinLength ? tag : tagEnd;
+
+			while (!neighbors.empty())
+			{
+				auto iteratorNext = VectorMath::choose(neighbors, prng);
+				Grid::tile_ptr& next = *iteratorNext;
+
+				current->setContraintTo(*next, linkingElement);
+				next->setContraintTo(*current, linkingElement);
+
+				vector<PatternInfo> compatiblePatternsInfo = getPatterns(current, getPatterns(usedTag));
+
+				if (compatiblePatternsInfo.empty())
+				{
+					current->setContraintTo(*next, {});
+					next->setContraintTo(*current, {});
+					neighbors.erase(iteratorNext);
+				}
+				else
+				{
+					PatternInfo patternInfo = choosePattern(compatiblePatternsInfo);
+					merge(current, patternInfo.pattern, patternInfo.rotationInfo);
+					return next;
+				}
+			}
+
+			return nullptr;
 		}
 
-		void buildRiverIteration(Grid& grid, Grid::tile_ptr& current, const tag_type& tag, const Grid::tile_type::pattern_t::element_t& linkingElement,
-			size_t& currentRiverSize, vector<Grid::tile_ptr>& visited)
+		void buildRiverIteration(Grid& grid, Grid::tile_ptr& current, const tag_type& tag, const tag_type& tagEnd, const Grid::tile_type::pattern_t::element_t& linkingElement,
+			size_t& currentRiverSize, size_t riverMinLength, vector<Grid::tile_ptr>& visited)
 		{
 			visited.push_back(current);
 
@@ -389,25 +421,15 @@ namespace ProceduralGen
 			// Put that pattern on current
 			// current = next
 
-			Grid::tile_ptr next; 
+			Grid::tile_ptr next = getNextTileInRiver(grid, current, tag, tagEnd, linkingElement, currentRiverSize, riverMinLength, visited);
 
-			try
-			{
-				next = getNextTileInRiver(grid, current, visited);
-
-				current->setContraintTo(*next, linkingElement);
-				next->setContraintTo(*current, linkingElement);
-			}
-			catch (VectorMath::cannot_choose_in_empty_range&)
-			{
+			if (!next)
 				throw interrupted{};
-			}
+				
 
-			PatternInfo patternInfo = getAndApplyPattern(current, tag);
-
-			for (size_t i = 0; i != patternInfo.pattern.data.size(); ++i)
+			for (size_t i = 0; i != current->getPattern().data.size(); ++i)
 			{
-				currentRiverSize += VectorMath::count_if(patternInfo.pattern.data[i], [](const Grid::tile_type::pattern_t::element_t& element) {return !element.isDefault(); });
+				currentRiverSize += VectorMath::count_if(current->getPattern().data[i], [&linkingElement](const Grid::tile_type::pattern_t::element_t& element) {return element.constraining(linkingElement); });
 			}
 
 			current = next;
@@ -428,21 +450,20 @@ namespace ProceduralGen
 
 				try
 				{
-					buildRiverIteration(grid, current, tag, linkingElement, currentRiverSize, visited);
+					buildRiverIteration(grid, current, tag, tagEnd, linkingElement, currentRiverSize, riverMinLength, visited);
 				}
 				catch (interrupted&)
 				{
-					break;
+					getAndApplyPattern(current, tagEnd);
 				}
 			}
-
-			getAndApplyPattern(current, tagEnd);
+			buildRiverIteration(grid, current, tagRiver, tagEnd, linkingElement, currentRiverSize, riverMinLength, visited);
 		}
 
-		void buildRiver(Grid& grid, tag_type tagStart, tag_type tagGoal, tag_type tagRiver, Grid::tile_type::pattern_t::element_t linkingElement, size_t riverMinLength)
+		void buildRiver(Grid& grid, tag_type tagStart, tag_type tagEnd, tag_type tagRiver, Grid::tile_type::pattern_t::element_t linkingElement, size_t riverMinLength)
 		{
-			Grid::tile_ptr start = getRandomValidPos(grid);
-			buildRiver(grid, std::move(tagStart), std::move(tagGoal), std::move(tagRiver), start, linkingElement, riverMinLength);
+			Grid::tile_ptr start = getRandomValidPos(grid, [this, &tagStart](const Grid::tile_ptr& tile) {return tile->getPattern().data[1][0].isDefault(); });
+			buildRiver(grid, std::move(tagStart), std::move(tagEnd), std::move(tagRiver), start, linkingElement, riverMinLength);
 		}
 
 #pragma endregion

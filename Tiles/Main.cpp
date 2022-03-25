@@ -8,7 +8,7 @@ using namespace ProceduralGen;
 
 int main()
 {
-	GenerationProcess<Pattern<Element<char>>> gen(8);
+	GenerationProcess<Pattern<Element<char>>> gen(3);
 	deserialize(std::string{ "Tuiles.txt" }, gen);
 
 	auto condition = [](const Hexagonal::Grid::tile_ptr& current)
