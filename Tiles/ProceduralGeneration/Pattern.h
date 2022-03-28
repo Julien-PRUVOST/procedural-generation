@@ -26,14 +26,14 @@ namespace ProceduralGen
 		using iterator = typename vector<element_t>::iterator;
 		using const_iterator = typename vector<element_t>::const_iterator;
 
-		static bool constraining(const_iterator begin, const const_iterator end, const_iterator otherBegin)
+		static bool canBePlacedOnConstraint(const_iterator begin, const const_iterator end, const_iterator otherBegin)
 		{
-			return VectorMath::compare(begin, end, otherBegin, &ProceduralGen::constraining<typename element_t::value_t>) == end;
+			return VectorMath::compare(begin, end, otherBegin, &ProceduralGen::constraintCanReceive<typename element_t::value_t>) == end;
 		}
 
-		static bool compatible(const_iterator begin, const const_iterator end, const_iterator otherBegin)
+		static bool canReceive(const_iterator begin, const const_iterator end, const_iterator otherBegin)
 		{
-			return VectorMath::compare(begin, end, otherBegin, &ProceduralGen::compatible<typename element_t::value_t>) == end;
+			return VectorMath::compare(begin, end, otherBegin, &ProceduralGen::canReceive<typename element_t::value_t>) == end;
 		}
 
 		template <class Predicate>
@@ -61,12 +61,12 @@ namespace ProceduralGen
 
 		vector<size_t> testRotations(const Pattern& other) const
 		{
-			const vector<size_t> anglesConstrained = testAllRotations(constraints, other.constraints, &Pattern::constraining);
+			const vector<size_t> anglesConstrained = testAllRotations(constraints, other.constraints, &Pattern::canBePlacedOnConstraint);
 
 			vector<size_t> anglesConstrainedAndCompatible;
 			for (const size_t& angleConstrained : anglesConstrained)
 			{
-				if (testRotation(data, other.data, angleConstrained, &Pattern::compatible))
+				if (testRotation(data, other.data, angleConstrained, &Pattern::canReceive))
 					anglesConstrainedAndCompatible.push_back(angleConstrained);
 			}
 
@@ -102,13 +102,13 @@ namespace ProceduralGen
 		}
 
 
-		void eraseConstraints()
+		void reset(vector<vector<element_t>>& v)
 		{
-			for (size_t i = 0; i != constraints.size(); ++i)
+			for (size_t i = 0; i != v.size(); ++i)
 			{
-				for (size_t j = 0; j != constraints[i].size(); ++j)
+				for (size_t j = 0; j != v[i].size(); ++j)
 				{
-					constraints[i][j] = element_t{};
+					v[i][j] = element_t{};
 				}
 			}
 		}
@@ -170,8 +170,26 @@ namespace ProceduralGen
 
 		void merge(const Pattern& other, const RotationInfo& rotationInfo)
 		{
-			eraseConstraints();
+			resetConstraints();
 			mergeData(other.data, rotationInfo);
 		}
+
+		void resetData()
+		{
+			reset(data);
+		}
+
+		void resetConstraints()
+		{
+			reset(constraints);
+		}
+
+		void reset()
+		{
+			resetData();
+			resetConstraints();
+		}
+
+
 	};
 }

@@ -23,10 +23,23 @@ namespace ProceduralGen
 				return instance;
 			}
 		private:
-			vector<ElementRules<Element>> rules{ vector<Element>{ Element{ value_t{} } } };
-			ElementRules<Element> ruleIncompatibleWithDefault{};
+			ElementRules<Element> defaultElement{};
+			ElementRules<Element> elementsCannotBePlacedOnDefault{};
+
+			vector<ElementRules<Element>> rulesPlacing{ vector<Element>{ Element{ value_t{} } } };
+			
 
 			Config() = default;
+
+			static bool arbitrates(const vector<ElementRules<Element>>& ruleVector, const Element& ruledElement, const Element& other)
+			{
+				for (const ElementRules<Element>& rule : ruleVector)
+				{
+					if (rule.arbitrates(ruledElement, other))
+						return true;
+				}
+				return false;
+			}
 
 		public:
 			Config(Config const&) = delete;
@@ -34,37 +47,32 @@ namespace ProceduralGen
 
 			void addDefaultValue(Element element)
 			{
-				rules[0].addElement(std::move(element));
+				defaultElement.addElement(std::move(element));
 			}
 
 			bool isDefault(const Element& element)
 			{
-				return rules[0].contains(element);
+				return element == Element{} || defaultElement.arbitrates(element);
 			}
 
-			void addRule(ElementRules<Element> elementRules)
+			void addRulePlacing(ElementRules<Element> elementRules)
 			{
-				rules.push_back(std::move(elementRules));
+				rulesPlacing.push_back(std::move(elementRules));
 			}
 
-			bool ruleCompatible(const Element& a, const Element& b)
+			void addCannotBePlacedOnDefault(Element element)
 			{
-				for (const auto& rule : rules)
-				{
-					if (rule.contains(a) && rule.contains(b))
-						return true;
-				}
-				return false;
+				elementsCannotBePlacedOnDefault.addElement(std::move(element));
 			}
 
-			void addIncompatibleWithDefault(Element element)
+			bool canBePlacedOnDefault(const Element& element)
 			{
-				ruleIncompatibleWithDefault.addElement(std::move(element));
+				return !elementsCannotBePlacedOnDefault.arbitrates(element);
 			}
 
-			bool isIncompatibleWithDefault(const Element& element)
+			bool canBePlacedOn(const Element& elementBeingPlaced, const Element& elementReceiving)
 			{
-				return ruleIncompatibleWithDefault.contains(element);
+				return (isDefault(elementReceiving) && canBePlacedOnDefault(elementBeingPlaced)) || arbitrates(rulesPlacing, elementBeingPlaced, elementReceiving);
 			}
 		};
 
@@ -97,14 +105,14 @@ namespace ProceduralGen
 			return val;
 		}
 
-		bool constraining(const Element& other) const
+		bool canBePlacedOn(const Element& elementReceiving) const
 		{
-			return other.isDefault() || *this == other;
+			return isDefault() || *this == elementReceiving || Config::getInstance().canBePlacedOn(*this, elementReceiving);
 		}
 
-		bool compatible(const Element& other) const
+		bool constraintCanReceive(const Element& constraintBeingPlaced) const
 		{
-			return (isDefault() && !other.isIncompatibleWithDefault()) || (other.isDefault() && !isIncompatibleWithDefault()) || *this == other || Config::getInstance().ruleCompatible(*this, other);
+			return *this == constraintBeingPlaced || Config::getInstance().canBePlacedOn(constraintBeingPlaced, *this);
 		}
 
 		static void addDefaultValue(Element element)
@@ -115,7 +123,7 @@ namespace ProceduralGen
 
 		static void addRule(ElementRules<Element> elementRules)
 		{
-			Config::getInstance().addRule(std::move(elementRules));
+			Config::getInstance().addRulePlacing(std::move(elementRules));
 		}
 
 		bool isDefault() const
@@ -125,25 +133,21 @@ namespace ProceduralGen
 
 		static void addIncompatibleWithDefault(Element element)
 		{
-			Config::getInstance().addIncompatibleWithDefault(std::move(element));
+			Config::getInstance().addCannotBePlacedOnDefault(std::move(element));
 		}
 
-		bool isIncompatibleWithDefault() const
-		{
-			return Config::getInstance().isIncompatibleWithDefault(*this);
-		}
 	};
 
 	template <class T>
-	bool constraining(const Element<T>& element, const Element<T>& other)
+	bool canReceive(const Element<T>& elementReceiving, const Element<T>& elementBeingPlaced)
 	{
-		return element.constraining(other);
+		return elementBeingPlaced.canBePlacedOn(elementReceiving);
 	}
 
 	template <class T>
-	bool compatible(const Element<T>& element, const Element<T>& other)
+	bool constraintCanReceive(const Element<T>& constraintReceiveing, const Element<T>& constraintBeingPlaced)
 	{
-		return element.compatible(other);
+		return constraintReceiveing.constraintCanReceive(constraintBeingPlaced);
 	}
 
 	template <class T>

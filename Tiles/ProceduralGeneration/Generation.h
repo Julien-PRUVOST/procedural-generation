@@ -429,7 +429,7 @@ namespace ProceduralGen
 
 			for (size_t i = 0; i != current->getPattern().data.size(); ++i)
 			{
-				currentRiverSize += VectorMath::count_if(current->getPattern().data[i], [&linkingElement](const Grid::tile_type::pattern_t::element_t& element) {return element.constraining(linkingElement); });
+				currentRiverSize += VectorMath::count_if(current->getPattern().data[i], [&linkingElement](const Grid::tile_type::pattern_t::element_t& element) {return element.canBePlacedOn(linkingElement); });
 			}
 
 			current = next;

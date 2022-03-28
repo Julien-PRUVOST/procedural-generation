@@ -8,22 +8,37 @@ namespace ProceduralGen
 	template <class element_t>
 	class ElementRules
 	{
-		vector<element_t> compatibleElements {};
+		vector<element_t> elements {};
 
-	public:
-		ElementRules() = default;
-
-		ElementRules(vector<element_t> compatibleElements) : compatibleElements{std::move(compatibleElements)} {}
-
-		void addElement(const element_t& element)
+		const element_t& getRuledElement() const
 		{
-			compatibleElements.push_back(element);
+			return elements[0];
 		}
 
 		bool contains(const element_t& element) const
 		{
-			return std::find(compatibleElements.begin(), compatibleElements.end(), element) != compatibleElements.end();
+			return std::find(elements.begin(), elements.end(), element) != elements.end();
 		}
 
+
+	public:
+		ElementRules() = default;
+
+		ElementRules(vector<element_t> compatibleElements) : elements{std::move(compatibleElements)} {}
+
+		void addElement(const element_t& element)
+		{
+			elements.push_back(element);
+		}
+
+		bool arbitrates(const element_t& ruledElement, const element_t& other) const
+		{
+			return getRuledElement() == ruledElement && contains(other);
+		}
+
+		bool arbitrates(const element_t& other) const
+		{
+			return contains(other);
+		}
 	};
 }

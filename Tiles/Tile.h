@@ -45,6 +45,11 @@ namespace ProceduralGenerationImplementation
 #pragma endregion
 
 #pragma region Pattern
+		pattern_t& getPattern()
+		{
+			return pattern;
+		}
+
 		const pattern_t& getPattern() const
 		{
 			return pattern;
@@ -75,6 +80,12 @@ namespace ProceduralGenerationImplementation
 		{
 			const size_t angle = getTileAngleTo(other);
 			pattern.constraints[0][angle] = element;
+		}
+
+		void eraseConstraintTo(const Tile& other)
+		{
+			const size_t angle = getTileAngleTo(other);
+			pattern.constraints[0][angle] = {};
 		}
 #pragma endregion
 
