@@ -22,31 +22,31 @@ namespace ProceduralGen
 	}
 
 	template <class Generation>
-	void deserialize(const string &line, typename Generation::pattern_t &tile)
+	void deserialize(const string &line, typename Generation::WeightedPattern&tile)
 	{
 		std::istringstream input{ line };
 
 		string subLine;
 
 		getline(input, subLine, ' ');
-		tile.tag = subLine;
+		tile.pattern.tags.push_back(subLine);
 
-		tile.constraints.push_back({});
+		tile.pattern.constraints.push_back({});
 		for (int i = 0; i < 6 && getline(input, subLine, ' '); ++i)
 		{
-			tile.constraints[0].push_back(subLine[0]);
+			tile.pattern.constraints[0].push_back(subLine[0]);
 		}
 
-		tile.data.push_back({});
+		tile.pattern.data.push_back({});
 
 		for (int i = 0; i < 6 && getline(input, subLine, ' '); ++i)
 		{
-			tile.data[0].push_back(subLine[0]);
+			tile.pattern.data[0].push_back(subLine[0]);
 		}
 
 		getline(input, subLine, ' ');
-		tile.data.push_back({});
-		tile.data[1].push_back(subLine[0]);
+		tile.pattern.data.push_back({});
+		tile.pattern.data[1].push_back(subLine[0]);
 
 		getline(input, subLine, ' ');
 		char unused_c;
@@ -151,7 +151,7 @@ namespace ProceduralGen
 
 			if (line.find("# Encoding", 0) == 0)
 			{
-				deserializeCategory<Generation::pattern_t>(file, line, gen);
+				deserializeCategory<Generation::WeightedPattern>(file, line, gen);
 			}
 		}
 	}

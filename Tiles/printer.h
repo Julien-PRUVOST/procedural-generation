@@ -13,7 +13,8 @@ namespace printer
 		os << (element.isDefault() ? defaultDisplay : element.value());
 	};
 
-	inline void print(std::ostream& os, Hexagonal::Grid &grid)
+	template <class PartialGrid>
+	void print(std::ostream& os, PartialGrid& grid)
 	{
 		for (size_t i = 0; i != grid.getHeight(); ++i)
 		{
@@ -25,12 +26,23 @@ namespace printer
 			{
 				size_t index = grid.getIndex(i, j);
 				const auto tile = grid.getTile(index);
-				bool valid = grid.getLayout(index);
+				bool valid = grid.isValid(index);
 
-				print(os, tile->getPattern().data[0][4], valid ? '.' : ' ');
-				os << " ";
-				print(os, tile->getPattern().data[0][5], valid ? '.' : ' ');
-				os << "   ";
+				if (valid)
+				{
+					print(os, tile->getPattern().data[0][4], '.');
+					os << " ";
+					print(os, tile->getPattern().data[0][5], '.');
+					os << "   ";
+				}
+				else
+				{
+					print(os, {}, ' ');
+					os << " ";
+					print(os, {}, ' ');
+					os << "   ";
+				}
+				
 			}
 
 			os << std::endl;
@@ -41,14 +53,25 @@ namespace printer
 			{
 				size_t index = grid.getIndex(i, j);
 				const auto tile = grid.getTile(index);
-				bool valid = grid.getLayout(index);
-
-				print(os, tile->getPattern().data[0][3], valid ? '.' : ' ');
-				os << " ";
-				print(os, tile->getPattern().data[1][0], valid ? '•' : ' ');
-				os << " ";
-				print(os, tile->getPattern().data[0][0], valid ? '.' : ' ');
-				os << " ";
+				bool valid = grid.isValid(index);
+				if (valid)
+				{
+					print(os, tile->getPattern().data[0][3],'.');
+					os << " ";
+					print(os, tile->getPattern().data[1][0],'•');
+					os << " ";
+					print(os, tile->getPattern().data[0][0],'.');
+					os << " ";
+				} else
+				{
+					print(os, {}, ' ');
+					os << " ";
+					print(os, {}, ' ');
+					os << " ";
+					print(os, {}, ' ');
+					os << " ";
+				}
+				
 			}
 
 			os << std::endl;
@@ -60,21 +83,134 @@ namespace printer
 			{
 				size_t index = grid.getIndex(i, j);
 				const auto tile = grid.getTile(index);
-				bool valid = grid.getLayout(index);
+				bool valid = grid.isValid(index);
 
-				print(os, tile->getPattern().data[0][2], valid ? '.' : ' ');
-				os << " ";
-				print(os, tile->getPattern().data[0][1], valid ? '.' : ' ');
-				os << "   ";
+				if (valid)
+				{
+					print(os, tile->getPattern().data[0][2], '.');
+					os << " ";								 
+					print(os, tile->getPattern().data[0][1], '.');
+					os << "   ";
+				}
+				else
+				{
+					print(os, {}, ' ');
+					os << " ";
+					print(os, {}, ' ');
+					os << "   ";
+				}
+				
 			}
 			os << std::endl;
 		}
 	}
 
-	inline void print(const std::string& filename, Hexagonal::Grid& grid)
+	template <class PartialGrid>
+	void print(const std::string& filename, PartialGrid& grid)
 	{
 		std::ofstream file{ filename };
 		print(file, grid);
+	}
+
+
+	template <class PartialGrid>
+	void printConstraints(std::ostream& os, PartialGrid& grid)
+	{
+		for (size_t i = 0; i != grid.getHeight(); ++i)
+		{
+			if (i % 2 == 1)
+				os << "   ";
+
+			os << " ";
+			for (size_t j = 0; j != grid.getWidth(); ++j)
+			{
+				size_t index = grid.getIndex(i, j);
+				const auto tile = grid.getTile(index);
+				bool valid = grid.isValid(index);
+
+				if (valid)
+				{
+					print(os, tile->getPattern().constraints[0][4], '.');
+					os << " ";
+					print(os, tile->getPattern().constraints[0][5], '.');
+					os << "   ";
+				}
+				else
+				{
+					print(os, {}, ' ');
+					os << " ";
+					print(os, {}, ' ');
+					os << "   ";
+				}
+
+			}
+
+			os << std::endl;
+			if (i % 2 == 1)
+				os << "   ";
+
+			for (size_t j = 0; j != grid.getWidth(); ++j)
+			{
+				size_t index = grid.getIndex(i, j);
+				const auto tile = grid.getTile(index);
+				bool valid = grid.isValid(index);
+				if (valid)
+				{
+					print(os, tile->getPattern().constraints[0][3], '.');
+					os << " ";
+					print(os, {}, '•');
+					os << " ";
+					print(os, tile->getPattern().constraints[0][0], '.');
+					os << " ";
+				}
+				else
+				{
+					print(os, {}, ' ');
+					os << " ";
+					print(os, {}, ' ');
+					os << " ";
+					print(os, {}, ' ');
+					os << " ";
+				}
+
+			}
+
+			os << std::endl;
+			if (i % 2 == 1)
+				os << "   ";
+
+			os << " ";
+			for (size_t j = 0; j != grid.getWidth(); ++j)
+			{
+				size_t index = grid.getIndex(i, j);
+				const auto tile = grid.getTile(index);
+				bool valid = grid.isValid(index);
+
+				if (valid)
+				{
+					print(os, tile->getPattern().constraints[0][2], '.');
+					os << " ";
+					print(os, tile->getPattern().constraints[0][1], '.');
+					os << "   ";
+				}
+				else
+				{
+					print(os, {}, ' ');
+					os << " ";
+					print(os, {}, ' ');
+					os << "   ";
+				}
+
+			}
+			os << std::endl;
+		}
+	}
+
+	template <class PartialGrid>
+	void printConstraints(const std::string& filename, PartialGrid& grid)
+	{
+		std::ofstream file{ filename };
+		printConstraints(file, grid);
 	}
 
 	

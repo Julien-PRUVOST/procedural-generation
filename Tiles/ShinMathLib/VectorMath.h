@@ -31,8 +31,8 @@ namespace shinmathlib {
 			return std::next(v.begin(), chooseIndex(v.size(), prng));
 		}
 
-		template<class T>
-		auto choose(std::vector<T>& v, const std::vector<float>& probability, std::mt19937& prng)
+		template<class T, class ProbaType>
+		auto choose(std::vector<T>& v, const std::vector<ProbaType>& probability, std::mt19937& prng)
 		{
 			return std::next(v.begin(), chooseIndex(probability, prng));
 		}
@@ -137,14 +137,20 @@ namespace shinmathlib {
 			return index;
 		}
 
+		template <class It, class Init>
+		Init sum(It first, It last, Init init)
+		{
+			for (; first != last; ++first)
+			{
+				init += static_cast<Init>(*first);
+			}
+			return init;
+		}
+
 		template <class Container, class Init>
 		Init sum(Container& v, Init init)
 		{
-			for (auto p = v.begin(); p != v.end(); ++p)
-			{
-				init += static_cast<Init>(*p);
-			}
-			return init;
+			return sum(v.begin(), v.end(), init);
 		}
 
 		template<class Container, class UnaryPredicate>

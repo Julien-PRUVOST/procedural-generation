@@ -22,10 +22,22 @@
     <Filter Include="Source Files\ShinMathLib">
       <UniqueIdentifier>{c1303c6b-153c-4701-b456-d65b3778764b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\PartialGrid">
+      <UniqueIdentifier>{aedf5f82-2953-43fd-b3e0-b896130db4ea}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ProceduralGeneration\Generation.cpp">
+      <Filter>Source Files\ProceduralGeneration</Filter>
+    </ClCompile>
+    <ClCompile Include="ProceduralGeneration\GenerationData.cpp">
+      <Filter>Source Files\ProceduralGeneration</Filter>
+    </ClCompile>
+    <ClCompile Include="ProceduralGeneration\RandomGenerator.cpp">
+      <Filter>Source Files\ProceduralGeneration</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -64,6 +76,15 @@
     </ClInclude>
     <ClInclude Include="ElementRules.h">
       <Filter>Source Files\ProceduralGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="ProceduralGeneration\GenerationData.h">
+      <Filter>Source Files\ProceduralGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="ProceduralGeneration\RandomGenerator.h">
+      <Filter>Source Files\ProceduralGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="PartialGrid\PartialGrid.h">
+      <Filter>Source Files\PartialGrid</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

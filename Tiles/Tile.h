@@ -7,21 +7,17 @@ namespace ProceduralGenerationImplementation
 {
 	using namespace std;
 
-	// template<class Coord>
-	template <class Pattern>
 	class Tile
 	{
 	public:
-		using Coord = Hexagonal::Coord; // Remove for template
-		using pattern_t = Pattern;
+		using Coord = Hexagonal::Coord;
+		using pattern_t = ProceduralGen::Pattern<ProceduralGen::Element<char>>;
 		using tag_type = std::string;
 	
 	private:
 		Coord coords{};
 
-		pattern_t pattern {};
-
-		vector<tag_type> tags{};
+		pattern_t pattern{};
 	
 	public:
 		Tile() = default;
@@ -31,8 +27,6 @@ namespace ProceduralGenerationImplementation
 		Coord::coord_type getR() const { return coords.r; }
 		Coord::coord_type getQ() const { return coords.q; }
 		Coord getCoords() const { return coords; }
-
-		const vector<tag_type>& getTags() const { return tags; }
 
 		const auto& getRing() const { return pattern.data[0]; }
 		const auto& getRing(size_t index) const { return pattern.data[0][index]; }
@@ -55,28 +49,17 @@ namespace ProceduralGenerationImplementation
 			return pattern;
 		}
 
-		void setPattern(pattern_t newPattern)
+		void setPattern(const pattern_t& newPattern)
 		{
 			pattern = newPattern;
-
-			tags.clear();
-			tags.push_back(newPattern.tag);
-		}
-
-		vector<typename pattern_t::RotationInfo> getCompatibilityInfo(const pattern_t& newPattern) const
-		{
-			return pattern.getCompatibilityInfo(newPattern);
 		}
 
 		void mergePattern(const pattern_t& newPattern, const typename pattern_t::RotationInfo& rotationInfo)
 		{
 			pattern.merge(newPattern, rotationInfo);
-
-			if (std::find(tags.begin(), tags.end(), newPattern.tag) == tags.end())
-				tags.push_back(newPattern.tag);
 		}
 
-		void setContraintTo(const Tile& other, typename pattern_t::element_t element)
+		void setContraintTo(const Tile& other, const typename pattern_t::element_t& element)
 		{
 			const size_t angle = getTileAngleTo(other);
 			pattern.constraints[0][angle] = element;
@@ -102,12 +85,6 @@ namespace ProceduralGenerationImplementation
 		float getAngleDegreesTo(const Tile& other) const
 		{
 			return Hexagonal::Math::getAngleDegrees(getQ(), getR(), other.getQ(), other.getR());
-		}
-
-		void erase()
-		{
-			setPattern({ {}, {{{}, {} ,{}, {}, {}, {}}}, {{{}, {} ,{}, {}, {}, {}}, {{}}}, {} });
-			tags.clear();
 		}
 
 		static float getAngleDegrees(int hexAngle)

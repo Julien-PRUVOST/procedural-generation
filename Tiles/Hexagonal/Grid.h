@@ -1,33 +1,37 @@
 ﻿#pragma once
 #include <vector>
-#include <memory>
 #include "../Tile.h"
 #include "../ShinMathLib/VectorMath.h"
 
 namespace Hexagonal {
 	using namespace std;
 
-	using Tile = ProceduralGenerationImplementation::Tile<ProceduralGen::Pattern<ProceduralGen::Element<char>>>;
-	// template <class Tile>
+	using Tile = ProceduralGenerationImplementation::Tile;
+
 	class Grid
 	{
 	public:
-		using tile_type = Tile;
-		using tile_ptr = tile_type*;
+		using tile_t = Tile;
+		using tile_ptr = tile_t*;
 
-		using size_type = size_t;
+		using index_t = size_t;
 
-		using mask_type = vector<bool>;
+	private:
+		index_t width;
+		index_t height;
 
 	public:
-		Grid()
+		vector<tile_ptr> grid{ width * height };
+
+	public:
+		Grid(index_t width = 17, index_t height = 13) : width {width}, height{height}, grid{ width * height }
 		{
 			grid.reserve(getSize());
 			for (size_t i = 0; i != getHeight(); ++i)
 			{
 				for (size_t j = 0; j != getWidth(); ++j)
 				{
-					grid[getIndex(i, j)] = new tile_type{ Coord::getCoord(i, j) };
+					grid[getIndex(i, j)] = new tile_t{ Coord::getCoord(i, j) };
 				}
 			}
 		}
@@ -41,132 +45,61 @@ namespace Hexagonal {
 					delete grid[getIndex(i, j)];
 				}
 			}
-		}
-
+		}		
+	
 	private:
-		size_type width = 17;
-		size_type height = 13;
-
-		mask_type layout =
-		{
-			0, 0, 0, 0, 0, 0, 0, 1,	1, 1, 1, 1, 1, 1, 1, 1, 1,      // 0 
-			  0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,	// 1
-			0, 0, 1, 1, 1, 1, 1, 1,	1, 1, 1, 1, 1, 1, 1, 0, 0,		// 2
-			  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,	// 3
-			1, 1, 1, 1, 0, 0, 1, 1,	1, 1, 1, 1,	1, 0, 1, 1, 1,		// 4
-			  1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,	// 5
-			1, 1, 1, 1, 1, 1, 1, 1,	1, 1, 1, 1,	1, 1, 1, 1, 0,		// 6 --
-			  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,	// 7
-			0, 1, 1, 1, 0, 0, 1, 1,	1, 1, 1, 1,	1, 0, 0, 0, 0,		// 8
-			  0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,	// 9
-			0, 0, 1, 1, 1, 1, 1, 1,	1, 1, 1, 1,	1, 1, 1, 0, 0,		// 10
-			  0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,	// 11
-			0, 0, 0, 0, 0, 0, 0, 0,	1, 1, 1, 1,	0, 1, 1, 1, 0,		// 12
-		};
-
-		size_t validTileSize = shinmathlib::VectorMath::sum(layout, size_t{});
-
-	public:
-		vector<tile_ptr> grid{ width * height };
-
-	private:
-		size_type getI(size_type index) const
+		index_t getI(index_t index) const
 		{
 			return index / getWidth();
 		}
 
-		size_type getJ(size_type index) const
+		index_t getJ(index_t index) const
 		{
 			return index - getI(index) * getWidth();
 		}
 
-		bool areValidCoordinates(size_type i, size_type j) const
+		bool areValidCoordinates(index_t i, index_t j) const
 		{
 			return 0 <= i && i < getHeight()
 				&& 0 <= j && j < getWidth();
 		}
 
 	public:
-		size_type getWidth() const noexcept
+		index_t getWidth() const noexcept
 		{
 			return width;
 		}
 
-		size_type getHeight() const noexcept
+		index_t getHeight() const noexcept
 		{
 			return height;
 		}
 
-		size_type getSize() const noexcept
+		index_t getSize() const noexcept
 		{
 			return width * height;
 		}
 
-		size_type getIndex(const tile_type& tile) const
+		index_t getIndex(const tile_t& tile) const
 		{
 			return tile.getQ() + tile.getR() * getWidth() + tile.getR() / 2;
 		}
 
-		size_type getIndex(size_type i, size_type j) const
+		index_t getIndex(index_t i, index_t j) const
 		{
 			return i * getWidth() + j;
 		}
 
-		bool getLayout(size_type index) const
-		{
-			return layout[index];
-		}
 
-		mask_type getLayout() const
-		{
-			return layout;
-		}
-
-		tile_ptr getTile(size_type index) const
+		tile_ptr getTile(index_t index) const
 		{
 			return grid[index];
 		}
 
-		size_t getValidTileSize() const
-		{
-			return validTileSize;
-		}
-
-		vector<tile_ptr> getValidTiles() const
-		{
-			vector<tile_ptr> validTiles;
-
-			for (size_type i = 0; i != getSize(); ++i)
-			{
-				if (getLayout(i)) validTiles.push_back(getTile(i));
-			}
-
-			return validTiles;
-		}
-
-		tile_ptr getValidTile(size_type index) const
-		{
-			size_t count = -1;
-			size_t i;
-			for (i = 0; count != index; ++i)
-			{
-				if (getLayout(i)) ++count;
-			}
-
-			return getTile(i - 1);
-		}
 
 		vector<tile_ptr> getTiles()
 		{
 			return grid;
-		}
-
-		void clear()
-		{
-			for (auto tile : grid)
-			{
-				tile->erase();
-			}
 		}
 
 
@@ -174,16 +107,16 @@ namespace Hexagonal {
 		/**
 		 * \brief Careful, if you modify a valid index then check if the new index is valid, you need to check if the new value didn't overflow size_type
 		 */
-		bool isValidIndex(size_type index) const
+		bool isValidIndex(index_t index) const
 		{
 			return 0 <= index && index < getSize();
 		}
 #pragma endregion
 
 #pragma region Relationships
-		vector<size_type> getNeighborsIndex(size_type index) const
+		vector<index_t> getNeighborsIndex(index_t index) const
 		{
-			vector<size_type> v{};
+			vector<index_t> v{};
 
 			size_t i = getI(index);
 			size_t j = getJ(index);
@@ -216,55 +149,9 @@ namespace Hexagonal {
 			return v;
 		}
 
-		vector<size_type> getValidNeighborsIndex(size_type index) const
+		vector<tile_ptr> getNeighbors(const tile_t& tile) const
 		{
-			vector<size_type> v{};
-
-			size_t i = getI(index);
-			size_t j = getJ(index);
-
-			bool evenRow = i % 2 == 0;
-
-			bool eastLimit = 0 == j;
-			bool westLimit = j == getWidth() - 1;
-			bool northLimit = 0 == i;
-			bool southLimit = i == getHeight() - 1;
-			bool southEastLimit = southLimit || (evenRow && eastLimit);
-			bool southWestLimit = southLimit || (!evenRow && westLimit);
-			bool northEastLimit = northLimit || (evenRow && eastLimit);
-			bool northWestLimit = northLimit || (!evenRow && westLimit);
-
-			size_t west = index + 1;
-			size_t south_west = index + getWidth() + !evenRow;
-			size_t south_east = index + getWidth() - evenRow;
-			size_t east = index - 1;
-			size_t north_east = index - getWidth() - evenRow;
-			size_t north_west = index - getWidth() + !evenRow;
-
-			if (!westLimit && getLayout(west)) v.push_back(west);
-			if (!southWestLimit && getLayout(south_west)) v.push_back(south_west);
-			if (!southEastLimit && getLayout(south_east)) v.push_back(south_east);
-			if (!eastLimit && getLayout(east)) v.push_back(east);
-			if (!northEastLimit && getLayout(north_east)) v.push_back(north_east);
-			if (!northWestLimit && getLayout(north_west)) v.push_back(north_west);
-
-			return v;
-		}
-
-		vector<tile_ptr> getNeighbors(const tile_type& tile) const
-		{
-			const vector<size_type> v = getNeighborsIndex(getIndex(tile));
-			vector<tile_ptr> neighbors;
-			for (const auto index : v)
-			{
-				neighbors.push_back(grid[index]);
-			}
-			return neighbors;
-		}
-
-		vector<tile_ptr> getValidNeighbors(const tile_type& tile) const
-		{
-			const vector<size_type> v = getValidNeighborsIndex(getIndex(tile));
+			const vector<index_t> v = getNeighborsIndex(getIndex(tile));
 			vector<tile_ptr> neighbors;
 			for (const auto index : v)
 			{
@@ -273,16 +160,5 @@ namespace Hexagonal {
 			return neighbors;
 		}
 #pragma endregion
-
-		
-
-	public:
-		void setLayout(size_type width_, size_type height_, mask_type newLayout)
-		{
-			width = width_;
-			height = height_;
-			layout.swap(newLayout);
-			validTileSize = shinmathlib::VectorMath::sum(layout, size_t{});
-		}
 	};
 }

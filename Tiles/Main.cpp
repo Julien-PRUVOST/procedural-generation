@@ -5,39 +5,63 @@
 #include "ProceduralGeneration/Generation.h"
 
 using namespace ProceduralGen;
+using namespace shin_grid;
 
 int main()
 {
-	GenerationProcess<Pattern<Element<char>>> gen(4);
-	deserialize(std::string{ "Tuiles.txt" }, gen);
+	GenerationData genData;
+	deserialize(std::string{ "Tuiles.txt" }, genData);
 
-	auto condition = [](const Hexagonal::Grid::tile_ptr& current)
+	RandomGenerator randomGenerator{ 4 };
+
+	Hexagonal::Grid grid{17, 13};
+
+	PartialGrid<Hexagonal::Grid>::mask_t layout =
 	{
-		std::vector<string> tags = { "Path", "PathEnd" };
-		return VectorMath::containsAny(current->getTags(), tags);
+			0, 0, 0, 0, 0, 0, 0, 1,	1, 1, 1, 1, 1, 1, 1, 1, 1,      // 0 
+			  0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,	// 1
+			0, 0, 1, 1, 1, 1, 1, 1,	1, 1, 1, 1, 1, 1, 1, 0, 0,		// 2
+			  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,	// 3
+			1, 1, 1, 1, 0, 0, 1, 1,	1, 1, 1, 1,	1, 0, 1, 1, 1,		// 4
+			  1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,	// 5
+			1, 1, 1, 1, 1, 1, 1, 1,	1, 1, 1, 1,	1, 1, 1, 1, 0,		// 6 --
+			  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,	// 7
+			0, 1, 1, 1, 0, 0, 1, 1,	1, 1, 1, 1,	1, 0, 0, 0, 0,		// 8
+			  0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,	// 9
+			0, 0, 1, 1, 1, 1, 1, 1,	1, 1, 1, 1,	1, 1, 1, 0, 0,		// 10
+			  0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,	// 11
+			0, 0, 0, 0, 0, 0, 0, 0,	1, 1, 1, 1,	0, 1, 1, 1, 0,		// 12
 	};
 
-	Hexagonal::Grid grid {};
+	PartialGrid<Hexagonal::Grid> partialGrid {grid, layout};
 
-	grid.clear();
+	GenerationProcess gen(genData, randomGenerator, partialGrid);
+	gen.resetGrid();
+
+	auto condition = [](Hexagonal::Grid::tile_ptr current)
+	{
+		std::vector<string> tags = { "Path", "PathEnd" };
+		return VectorMath::containsAny(current->getPattern().tags, tags);
+	};
 
 	try
 	{
-		gen.buildPath(grid, "PathEnd", "PathEnd", "Path", grid.getValidTile(0), grid.getValidTile(140), 'C');
-		gen.buildPath(grid, "PathEnd", "PathEnd", "Path", grid.getValidTile(37), grid.getValidTile(117), 'C');
-		gen.buildPath(grid, "PathEnd", "PathEnd", "Path", 'C', nullptr, nullptr, condition, condition, condition);
-		/*gen.buildPath(grid, "PathEnd", "PathEnd", "Path", 'C', nullptr, nullptr, condition, condition, condition);
-		gen.buildPath(grid, "PathEnd", "PathEnd", "Path", 'C', nullptr, nullptr, condition, condition, condition);
-		gen.buildPath(grid, "PathEnd", "PathEnd", "Path", 'C', nullptr, nullptr, condition, condition, condition);*/
+		gen.buildPath({ partialGrid.getValidTile(0), partialGrid.getValidTile(140), "PathEnd", "PathEnd", "Path", 'C' });
+		gen.buildPath({ partialGrid.getValidTile(37), partialGrid.getValidTile(117), "PathEnd", "PathEnd", "Path", 'C' });
+		gen.buildPath({ nullptr, nullptr, "PathEnd", "PathEnd", "Path", 'C', condition}, condition, condition);
+		
 
-		gen.buildRiver(grid, "RiverEnd", "RiverEnd", "River", 'R', 30);
-		// gen.populate(grid, {  "Void" });
+		gen.buildRiver({"RiverEnd",	"RiverEnd",	"River",	nullptr,	'R',	30	});
+
+
+		// todo : some constrainsts are left over
+		gen.populate({  "Void", "Mine", "Building"});
 	}
 	catch(...)
 	{
-		printer::print("log.txt", grid);
+		printer::print("log.txt", partialGrid);
 		throw std::exception{};
 	}
 
-	printer::print("output.txt", grid);
+	printer::print("output.txt", partialGrid);
 }

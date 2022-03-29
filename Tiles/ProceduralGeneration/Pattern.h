@@ -15,23 +15,21 @@ namespace ProceduralGen
 		using element_t = T;
 		using tag_t = std::string;
 
-		tag_t tag {};
+		vector<tag_t> tags {};
 
 		vector<vector<element_t>> constraints {};
 		vector<vector<element_t>> data {};
-
-		size_t weight{}; // TODO : Maybe should not be in the pattern
 
 	private:
 		using iterator = typename vector<element_t>::iterator;
 		using const_iterator = typename vector<element_t>::const_iterator;
 
-		static bool canBePlacedOnConstraint(const_iterator begin, const const_iterator end, const_iterator otherBegin)
+		static bool _constraintCanReceive(const_iterator begin, const const_iterator end, const_iterator otherBegin)
 		{
 			return VectorMath::compare(begin, end, otherBegin, &ProceduralGen::constraintCanReceive<typename element_t::value_t>) == end;
 		}
 
-		static bool canReceive(const_iterator begin, const const_iterator end, const_iterator otherBegin)
+		static bool _canReceive(const_iterator begin, const const_iterator end, const_iterator otherBegin)
 		{
 			return VectorMath::compare(begin, end, otherBegin, &ProceduralGen::canReceive<typename element_t::value_t>) == end;
 		}
@@ -61,12 +59,12 @@ namespace ProceduralGen
 
 		vector<size_t> testRotations(const Pattern& other) const
 		{
-			const vector<size_t> anglesConstrained = testAllRotations(constraints, other.constraints, &Pattern::canBePlacedOnConstraint);
+			const vector<size_t> anglesConstrained = testAllRotations(constraints, other.constraints, &Pattern::_constraintCanReceive);
 
 			vector<size_t> anglesConstrainedAndCompatible;
 			for (const size_t& angleConstrained : anglesConstrained)
 			{
-				if (testRotation(data, other.data, angleConstrained, &Pattern::canReceive))
+				if (testRotation(data, other.data, angleConstrained, &Pattern::_canReceive))
 					anglesConstrainedAndCompatible.push_back(angleConstrained);
 			}
 
@@ -95,10 +93,9 @@ namespace ProceduralGen
 			auto otherConstraints = flip(constraints);
 			auto otherData = flip(data);
 
-			return{	tag,
-						otherConstraints,
-						otherData,
-						weight};
+			return{tags,
+					otherConstraints,
+					otherData};
 		}
 
 
@@ -147,7 +144,7 @@ namespace ProceduralGen
 		}
 
 	public:
-		vector<RotationInfo> getCompatibilityInfo(const Pattern& other) const
+		vector<RotationInfo> canReceive(const Pattern& other) const
 		{
 			vector<RotationInfo> result;
 
@@ -172,6 +169,11 @@ namespace ProceduralGen
 		{
 			resetConstraints();
 			mergeData(other.data, rotationInfo);
+
+			for (const tag_t& tag : other.tags)
+			{
+				if (std::find(tags.begin(), tags.end(), tag) == tags.end()) tags.push_back(tag);
+			}
 		}
 
 		void resetData()
@@ -190,6 +192,16 @@ namespace ProceduralGen
 			resetConstraints();
 		}
 
+		void reset(vector<size_t> constraintsNb, vector<size_t> dataNb)
+		{
+			tags = {};
+
+			for (size_t i : constraintsNb)
+				constraints.push_back(vector<element_t>(i, element_t{}));
+
+			for (size_t i : dataNb)
+				data.push_back(vector<element_t>(i, element_t{}));
+		}
 
 	};
 }

@@ -8,464 +8,184 @@
 // Todo : remove those includes
 #include <chrono>
 
+#include "GenerationData.h"
+#include "RandomGenerator.h"
 #include "../ShinMathLib/Math.h"
 #include "../ShinMathLib/VectorMath.h"
 #include "../Tile.h"
 #include "../Hexagonal/Grid.h"
+#include "../PartialGrid/PartialGrid.h"
 
 
 namespace ProceduralGen
 {
-	using std::vector;
+	using namespace std;
 	using namespace shinmathlib;	
 
-	using Grid = Hexagonal::Grid;
-
-	template <class Pattern = Pattern<Element<char>>>
 	class GenerationProcess
 	{
+	private:
+		using PartialGrid = shin_grid::PartialGrid<Hexagonal::Grid>;
+
+		GenerationData generationData;
+		RandomGenerator randomGenerator;
+		PartialGrid& grid;
+
 	public:
-		using pattern_t = Pattern;
+		using pattern_t = GenerationData::pattern_t;
 		using pattern_ptr = pattern_t*;
 
-		using tag_type = typename pattern_t::tag_t;
+		using weighted_pattern_t = GenerationData::WeightedPattern;
+		using weighted_pattern_ptr = weighted_pattern_t*;
 
-		using seed_type = int;
+		using element_t = pattern_t::element_t;
 
-		static bool trueCondition(const Grid::tile_ptr&) { return true; }
-		static bool falseCondition(const Grid::tile_ptr&) { return false; }
+		using RotationInfo = pattern_t::RotationInfo;
 
-	private:
-		std::map<tag_type, vector<pattern_t>> tiles {};
+		using tag_t = GenerationData::tag_t;
 
-		/**
-		 * \brief The reproductibility of the seed cannot be guaranteed if multiple generation commands are used simultaneously on the same GenerationProcess
-		 */
-		std::mt19937 prng;
-		seed_type seed {};
+		using tile_ptr = PartialGrid::tile_ptr;
 
-		std::mt19937 prngSeed;
+		static bool trueCondition(tile_ptr) { return true; }
+		static bool falseCondition(tile_ptr) { return false; }
+
 
 	public:
-		GenerationProcess(seed_type seed) : seed{seed}
-		{
-			if (seed == 0)
-			{
-				std::random_device rd;
-				prng.seed(rd() ^ (
-					static_cast<std::mt19937::result_type>(std::chrono::duration_cast<std::chrono::seconds>(
-						std::chrono::system_clock::now().time_since_epoch()
-						).count()) +
-					static_cast<std::mt19937::result_type>(std::chrono::duration_cast<std::chrono::microseconds>(
-						std::chrono::high_resolution_clock::now().time_since_epoch()
-						).count()))
-				);
-			} else
-			{
-				prng.seed(seed);
-			}
-			
-		}
+		GenerationProcess(GenerationData generationData, RandomGenerator randomGenerator, PartialGrid& grid);
 
-		void add(pattern_t &&tile)
-		{
-			tiles[tile.tag].push_back(std::move(tile));
-		}
+		RandomGenerator& getRandomGenerator();
+		const RandomGenerator& getRandomGenerator() const;
 
-	public:
-		void setRandomSeed()
-		{
-			std::uniform_int_distribution<seed_type> seedChooser{};
-			setSeed(seedChooser(prngSeed));
-		}
 
-		void setSeed(seed_type newSeed)
-		{
-			seed = newSeed;
-			prng.seed(seed);
-		}
-
-		seed_type getSeed() const
-		{
-			return seed;
-		}
-
-	public:
-		// template <class Grid>
-		void populate(Grid &grid, vector<tag_type> tags)
-		{
-			for (auto& tile : grid.getValidTiles())
-			{
-				getAndApplyPattern(tile, tags);
-			}
-		}
-
-	public:
-		/**
-		 * \brief Is public only for debug puposes
-		 * \return A random position on the grid
-		 */
-		Grid::tile_ptr getRandomPos(Grid &grid)
-		{
-			const size_t index = VectorMath::chooseIndex(grid.getSize(), prng);
-			return grid.getTile(index);
-		}
-
-		Grid::tile_ptr getRandomValidPos(Grid& grid,
-			const std::function<bool(const Grid::tile_ptr&)>& condition = trueCondition)
-		{
-			const vector<Grid::tile_ptr> validTiles = grid.getValidTiles();
-			vector<Grid::tile_ptr> pool{};
-			for (const auto & tile : validTiles)
-			{
-				if (condition(tile))
-					pool.push_back(tile);
-			}
-			const size_t index = VectorMath::chooseIndex(pool.size(), prng);
-			return pool[index];
-		}
-
-		vector<pattern_t>& getPatterns(const tag_type& tag)
-		{
-			return tiles[tag];
-		}
-
-		vector<pattern_t> getPatterns(const vector<tag_type>& tags)
-		{
-			vector<pattern_t> result;
-
-			for(const auto& tag : tags)
-			{
-				vector<pattern_t>& patterns = getPatterns(tag);
-				result.insert(result.end(), patterns.begin(), patterns.end());
-			}
-			return result;
-		}
-
-		static void eraseGrid(Grid &grid)
-		 {
-			 for (auto tile : grid.grid)
-			 {
-				 tile->erase();
-			 }
-		 }
-
-#pragma region Build
 	private:
 		struct PatternInfo
 		{
-			pattern_t pattern;
-			typename pattern_t::RotationInfo rotationInfo;
+			weighted_pattern_t weightedPattern;
+			pattern_t::RotationInfo rotationInfo;
 		};
 
-		static vector<PatternInfo> getPatterns(const Grid::tile_ptr current, const vector<pattern_t>& patterns)
+#pragma region Build
+	private:
+		tile_ptr getRandomPos();
+		tile_ptr getRandomPosWithCondition(const std::function<bool(tile_ptr)>& condition = trueCondition);
+		tile_ptr getNextTile();
+
+		static vector<PatternInfo> getPlaceablePatterns(tile_ptr tile, const vector<weighted_pattern_t>& patternPool);
+		PatternInfo choosePattern(vector<PatternInfo>& placeablePatternsInfo);
+		PatternInfo choosePlaceablePattern(tile_ptr tile, const vector<weighted_pattern_t>& patternPool);
+
+		static void merge(tile_ptr tile, const pattern_t& chosenPattern, RotationInfo& rotationInfo);
+		template <class Tag>
+		PatternInfo choosePlaceablePatternAndMerge(tile_ptr tile, const Tag& tag)
 		{
-			vector<PatternInfo> correctPatterns;
+			PatternInfo patternInfo = choosePlaceablePattern(tile, generationData.getPatterns(tag));
 
-			for (size_t i = 0; i != patterns.size(); ++i)
-			{
-				for (const auto& rotationInfo : current->getCompatibilityInfo(patterns[i]))
-				{
-					correctPatterns.push_back({ patterns[i], rotationInfo });
-				}
-			}
+			merge(tile, patternInfo.weightedPattern.pattern, patternInfo.rotationInfo);
 
-			return correctPatterns;
+			return patternInfo;
 		}
 
 	public:
 		class pattern_not_found final : public std::exception {};
 
-	private:
-		PatternInfo choosePattern(vector<PatternInfo>& compatiblePatternsInfo)
-		{
-			if (!compatiblePatternsInfo.empty())
-			{
-				vector<size_t> probability;
-
-				for (const auto& patternInfo : compatiblePatternsInfo)
-				{
-					probability.push_back(patternInfo.pattern.weight);
-				}
-
-				const size_t index = VectorMath::chooseIndex(probability, prng);
-
-				return compatiblePatternsInfo[index];
-			}
-
-			throw pattern_not_found{};
-		}
-
-		PatternInfo choosePattern(const Grid::tile_ptr& current, const vector<pattern_t>& patterns)
-		{
-			vector<PatternInfo> compatiblePatternsInfo = getPatterns(current, patterns);
-
-			return choosePattern(compatiblePatternsInfo);
-		}
-
-		
-
-		static void merge(Grid::tile_ptr& current, const pattern_t& pattern, typename pattern_t::RotationInfo& rotationInfo)
-		{
-			current->mergePattern(pattern, rotationInfo);
-		}
-
-		template <class Tag>
-		PatternInfo getAndApplyPattern(Grid::tile_ptr& current, const Tag& tag)
-		{
-			PatternInfo patternInfo = choosePattern(current, getPatterns(tag));
-
-			merge(current, patternInfo.pattern, patternInfo.rotationInfo);
-
-			return patternInfo;
-		}
+		void resetGrid();
+		void populate(const vector<tag_t>& patternTags);
 
 #pragma endregion
 
 
 #pragma region Path
+	public:
+		struct PathData
+		{
+			tile_ptr start;
+			tile_ptr goal;
+
+			tag_t tagStart;
+			tag_t tagGoal;
+			tag_t tagPath;
+
+			element_t linkingElement;
+
+			std::function<bool(tile_ptr)> stopCondition = falseCondition;
+		};
+
+		struct PathBuilder
+		{
+			PathData data;
+
+			tile_ptr current;
+
+			vector<tile_ptr> path;
+
+			void next() { path.push_back(current); }
+			bool stop() const { return *current == *data.goal || data.stopCondition(current); }
+			tag_t getTag() const { return *current == *data.start ? data.tagStart :
+											*current == *data.goal ? data.tagGoal :
+											data.tagPath; }
+		};
+
 	private:
-		static vector<float> getRelativeAngles(const Grid::tile_ptr &referenceTile, float referenceAngle, const vector<Grid::tile_ptr> &neighbors)
-		{
-			vector<float> angles;
+		static vector<float> getRelativeAngles(tile_ptr referenceTile, float referenceAngle, const vector<tile_ptr>& neighbors);
+		static void filterNeighbors(vector<tile_ptr>& neighbors, vector<float>& relativeAngles, float angeThreshold = 90.0f);
+		static vector<float> getTileProbability(const vector<float>& relativeAngles);
 
-			for (const auto& neighbor : neighbors)
-			{
-				const float angle = referenceTile->getAngleDegreesTo(*neighbor);
-				angles.push_back(Math::angularDifference(angle, referenceAngle, 360.0f));
-			}
-
-			return angles;
-		}
-
-		static void filterNeighbors(vector<Grid::tile_ptr> &neighbors, vector<float>& relativeAngles, float angeThreshold = 360.0f)
-		{
-			const vector<size_t> indices = VectorMath::filteredIndex(relativeAngles, [&angeThreshold](const float& angle) { return std::abs(angle) > angeThreshold; });
-
-			VectorMath::eraseByIndex(relativeAngles, indices);
-			VectorMath::eraseByIndex(neighbors, indices);			
-		}
-
-		static vector<float> getTileProbability(const vector<float> &relativeAngles)
-		{
-			vector<float> probability;
-
-			if (relativeAngles.empty())
-			{
-				return {};
-			}
-
-			const float range = std::max(0.0f, *std::max_element(relativeAngles.begin(), relativeAngles.end())) - std::min(0.0f, *std::min_element(relativeAngles.begin(), relativeAngles.end()));
-
-			const float min = *std::min_element(relativeAngles.begin(), relativeAngles.end());
-
-			for (const float relativeAngle : relativeAngles)
-			{
-				probability.push_back(range - (relativeAngle - min));
-			}
-
-			return probability;
-		}
-
-		Grid::tile_ptr getNextTileInPath(Grid &grid, const Grid::tile_ptr &current, const Grid::tile_ptr &goal, const vector<Grid::tile_ptr> &visited)
-		{
-			if (current->distance(*goal) == 1) return goal;
-
-			vector<Grid::tile_ptr> neighbors =  grid.getValidNeighbors(*current);
-
-			VectorMath::eraseOncePtr(neighbors, visited);
-
-			const float referenceAngle = current->getAngleDegreesTo(*goal);
-			vector<float> relativeAngles = getRelativeAngles(current, referenceAngle, neighbors);
-
-			filterNeighbors(neighbors, relativeAngles, 90.0f);
-
-			const vector<float> probability = getTileProbability(relativeAngles);
-
-			return *VectorMath::choose(neighbors, probability, prng);
-		}
-
-		static const tag_type& getTag(const Grid::tile_ptr& current, const Grid::tile_ptr& start, const Grid::tile_ptr& goal,
-		                              const tag_type &tagPath, const tag_type& tagStart, const tag_type& tagGoal)
-		{
-			if (*current == *start) return tagStart;
-			if (*current == *goal) return tagGoal;
-			return tagPath;
-		}
-
-		PatternInfo getAndApplyPattern(Grid::tile_ptr& current, const Grid::tile_ptr& start, const Grid::tile_ptr& goal,
-			const tag_type& tagPath, const tag_type& tagStart, const tag_type& tagGoal)
-		{
-			const tag_type& tag = getTag(current, start, goal, tagPath, tagStart, tagGoal);
-
-			return getAndApplyPattern(current, tag);
-		}
+		tile_ptr getNextTileInPath(PathBuilder& pathBuilder);
 
 		class interrupted : public std::exception {};
 
-		void buildPathIteration(Grid& grid, Grid::tile_ptr& current, const Grid::tile_ptr& start, const Grid::tile_ptr& goal,
-			const tag_type& tagPath, const tag_type& tagStart, const tag_type& tagGoal, const Grid::tile_type::pattern_t::element_t &linkingElement,
-			vector<Grid::tile_ptr>& visited,
-			const std::function<bool(const Grid::tile_ptr&)> &stopCondition)
-		{
-			visited.push_back(current);
-
-			// Get the next tile
-			// Put the path element on the constraints of current, in direction of next. Same for next to current
-			// Choose a pattern to put on current
-			// Put that pattern on current
-			// current = next
-			Grid::tile_ptr next;
-			try
-			{
-				next = getNextTileInPath(grid, current, goal, visited);
-				current->setContraintTo(*next, linkingElement);
-				next->setContraintTo(*current, linkingElement);
-			}
-			catch (VectorMath::cannot_choose_in_empty_range&)
-			{
-				current = goal;
-				next = goal;
-				throw interrupted{};
-			}
-
-			const tag_type& tag = getTag(current, start, goal, tagPath, tagStart, tagGoal);
-			getAndApplyPattern(current, tag);
-
-			current = next;
-
-			if (stopCondition(current)) throw interrupted{};
-		}
+		tile_ptr buildPathIteration(PathBuilder& pathBuilder);
 
 	public:
-
-		void buildPath(Grid& grid, tag_type tagStart, tag_type tagGoal, tag_type tagPath, Grid::tile_ptr start, Grid::tile_ptr goal, Grid::tile_type::pattern_t::element_t linkingElement,
-			std::function<bool(const Grid::tile_ptr&)> stopCondition = falseCondition)
-		{
-			vector<Grid::tile_ptr> visited;
-
-			Grid::tile_ptr current = start;
-
-			while (*current != *goal)
-			{
-				try
-				{
-					buildPathIteration(grid, current, start, goal, tagPath, tagStart, tagGoal, linkingElement, visited, stopCondition);
-				}
-				catch (interrupted&)
-				{
-					getAndApplyPattern(current, tagGoal);
-					return;
-				}
-			}
-			getAndApplyPattern(current, start, goal, tagPath, tagStart, tagGoal);
-		}
-
-		void buildPath(Grid& grid, tag_type tagStart, tag_type tagGoal, tag_type tagPath, Grid::tile_type::pattern_t::element_t linkingElement,
-			Grid::tile_ptr start = nullptr, Grid::tile_ptr goal = nullptr,
-			std::function<bool(const Grid::tile_ptr&)> startCondition = trueCondition,
-			std::function<bool(const Grid::tile_ptr&)> stopCondition = falseCondition,
-			std::function<bool(const Grid::tile_ptr&)> goalCondition = trueCondition)
-		{
-			if (!start) start = getRandomValidPos(grid, startCondition);
-			if (!goal) goal = getRandomValidPos(grid, goalCondition);
-			buildPath(grid, std::move(tagStart), std::move(tagGoal), std::move(tagPath), start, goal, linkingElement, std::move(stopCondition));
-		}
+		void buildPath(PathData pathData, std::function<bool(tile_ptr)> startCondition = trueCondition, std::function<bool(tile_ptr)> goalCondition = trueCondition);
 #pragma endregion
 
 #pragma region River
-	private:
-		Grid::tile_ptr getNextTileInRiver(Grid& grid, Grid::tile_ptr& current, const tag_type& tag, const tag_type& tagEnd, const Grid::tile_type::pattern_t::element_t& linkingElement, size_t& currentRiverSize, size_t riverMinLength, const vector<Grid::tile_ptr>& visited)
-		{
-			vector<Grid::tile_ptr> neighbors = grid.getValidNeighbors(*current);
-
-			VectorMath::eraseOncePtr(neighbors, visited);
-
-			const tag_type& usedTag = currentRiverSize < riverMinLength ? tag : tagEnd;
-
-			while (!neighbors.empty())
-			{
-				auto iteratorNext = VectorMath::choose(neighbors, prng);
-				Grid::tile_ptr& next = *iteratorNext;
-
-				current->setContraintTo(*next, linkingElement);
-				next->setContraintTo(*current, linkingElement);
-
-				vector<PatternInfo> compatiblePatternsInfo = getPatterns(current, getPatterns(usedTag));
-
-				if (compatiblePatternsInfo.empty())
-				{
-					current->setContraintTo(*next, {});
-					next->setContraintTo(*current, {});
-					neighbors.erase(iteratorNext);
-				}
-				else
-				{
-					PatternInfo patternInfo = choosePattern(compatiblePatternsInfo);
-					merge(current, patternInfo.pattern, patternInfo.rotationInfo);
-					return next;
-				}
-			}
-
-			return nullptr;
-		}
-
-		void buildRiverIteration(Grid& grid, Grid::tile_ptr& current, const tag_type& tag, const tag_type& tagEnd, const Grid::tile_type::pattern_t::element_t& linkingElement,
-			size_t& currentRiverSize, size_t riverMinLength, vector<Grid::tile_ptr>& visited)
-		{
-			visited.push_back(current);
-
-			// Get the next tile
-			// Put the path element on the constraints of current, in direction of next. Same for next to current
-			// Choose a pattern to put on current
-			// Put that pattern on current
-			// current = next
-
-			Grid::tile_ptr next = getNextTileInRiver(grid, current, tag, tagEnd, linkingElement, currentRiverSize, riverMinLength, visited);
-
-			if (!next)
-				throw interrupted{};
-				
-
-			for (size_t i = 0; i != current->getPattern().data.size(); ++i)
-			{
-				currentRiverSize += VectorMath::count_if(current->getPattern().data[i], [&linkingElement](const Grid::tile_type::pattern_t::element_t& element) {return element.canBePlacedOn(linkingElement); });
-			}
-
-			current = next;
-		}
-
 	public:
-		void buildRiver(Grid& grid, tag_type tagStart, tag_type tagEnd, tag_type tagRiver, Grid::tile_ptr start, Grid::tile_type::pattern_t::element_t linkingElement, size_t riverMinLength)
+		struct RiverData
 		{
-			vector<Grid::tile_ptr> visited;
+			tag_t tagStart;
+			tag_t tagEnd;
+			tag_t tagRiver;
 
-			size_t currentRiverSize = 0;
+			tile_ptr start;
 
-			Grid::tile_ptr current = start;
+			element_t linkingElement;
+			size_t riverMinLength;
+		};
 
-			while (currentRiverSize < riverMinLength)
+	private:
+		struct RiverBuilder
+		{
+			RiverData data;
+
+			tile_ptr current;
+			vector<tile_ptr> river;
+
+			size_t riverSize;
+
+			bool tooSmall() const { return riverSize < data.riverMinLength; }
+			tag_t& getTag() { return *current == *data.start ? data.tagStart :
+									tooSmall() ?  data.tagRiver :
+									data.tagEnd; }
+
+			void next() { river.push_back(current); }
+
+			void countRiverElements()
 			{
-				tag_type& tag = (*current == *start) ? tagStart : tagRiver;
-
-				try
+				for (size_t i = 0; i != current->getPattern().data.size(); ++i)
 				{
-					buildRiverIteration(grid, current, tag, tagEnd, linkingElement, currentRiverSize, riverMinLength, visited);
-				}
-				catch (interrupted&)
-				{
-					getAndApplyPattern(current, tagEnd);
+					riverSize += VectorMath::count_if(current->getPattern().data[i], [this](const pattern_t::element_t& element) {return element.canBePlacedOn(data.linkingElement); });
 				}
 			}
-			buildRiverIteration(grid, current, tagRiver, tagEnd, linkingElement, currentRiverSize, riverMinLength, visited);
-		}
+		};
 
-		void buildRiver(Grid& grid, tag_type tagStart, tag_type tagEnd, tag_type tagRiver, Grid::tile_type::pattern_t::element_t linkingElement, size_t riverMinLength)
-		{
-			Grid::tile_ptr start = getRandomValidPos(grid, [this, &tagStart](const Grid::tile_ptr& tile) {return tile->getPattern().data[1][0].isDefault(); });
-			buildRiver(grid, std::move(tagStart), std::move(tagEnd), std::move(tagRiver), start, linkingElement, riverMinLength);
-		}
+		tile_ptr getNextTileInRiver(RiverBuilder& riverBuilder);
 
+		tile_ptr buildRiverIteration(RiverBuilder& riverBuilder);
+	
+	public:
+		void buildRiver(RiverData riverData);
 #pragma endregion
 	};
 }

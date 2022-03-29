@@ -141,17 +141,23 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="ProceduralGeneration\Generation.cpp" />
+    <ClCompile Include="ProceduralGeneration\GenerationData.cpp" />
+    <ClCompile Include="ProceduralGeneration\RandomGenerator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ElementRules.h" />
     <ClInclude Include="Hexagonal\Coord.h" />
     <ClInclude Include="Hexagonal\Grid.h" />
     <ClInclude Include="Hexagonal\Math.h" />
+    <ClInclude Include="PartialGrid\PartialGrid.h" />
     <ClInclude Include="printer.h" />
     <ClInclude Include="ProceduralGeneration\deserializer.h" />
     <ClInclude Include="ProceduralGeneration\Element.h" />
     <ClInclude Include="ProceduralGeneration\Generation.h" />
+    <ClInclude Include="ProceduralGeneration\GenerationData.h" />
     <ClInclude Include="ProceduralGeneration\Pattern.h" />
+    <ClInclude Include="ProceduralGeneration\RandomGenerator.h" />
     <ClInclude Include="ShinMathLib\Math.h" />
     <ClInclude Include="ShinMathLib\VectorMath.h" />
     <ClInclude Include="Tile.h" />

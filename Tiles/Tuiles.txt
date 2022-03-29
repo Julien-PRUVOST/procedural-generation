@@ -45,5 +45,5 @@ Path C . . . C ., C C C C C ., ., 1
 
 Mine . . . . . ., M M M M . ., M, 2 3
 Campfire . . . . . ., C . . . . ., F, 3
-Building C . . . . ., B B B B B B, B, 1
-Void . . . . . ., . . . . . ., ., 100
+Building C . . . . ., B B B B B B, B, 5
+Void . . . . . ., . . . . . ., ., 60
