@@ -1,4 +1,5 @@
 #include "Generation.h"
+#include "../printer.h"
 
 namespace ProceduralGen
 {
@@ -96,7 +97,8 @@ namespace ProceduralGen
 	void GenerationProcess::merge(tile_ptr tile, const pattern_t& chosenPattern, RotationInfo& rotationInfo)
 	{
 		tile->getPattern().merge(chosenPattern, rotationInfo);
-	};
+	}
+
 
 	void GenerationProcess::populate(const vector<tag_t>& patternTags)
 	{
@@ -105,6 +107,55 @@ namespace ProceduralGen
 		for (tile_ptr tile : tiles)
 		{
 			choosePlaceablePatternAndMerge(tile, patternTags);
+		}
+	}
+
+	void GenerationProcess::computeConstraintsFromNeighbors(tile_ptr tile, vector<tile_ptr> neighbors)
+	{
+		for (const tile_ptr neighbor : neighbors)
+		{
+			tile->setContraintTo(*neighbor, neighbor->getPattern().data[0][neighbor->getTileAngleTo(*tile)]);
+		}
+	}
+	void GenerationProcess::computeConstraintsFromNeighbors(vector<tile_ptr>& tiles) const
+	{
+		for (tile_ptr tile : tiles)
+		{
+			computeConstraintsFromNeighbors(tile, grid.getValidNeighbors(tile));
+		}
+	}
+
+	vector<GenerationProcess::PatternInfo> GenerationProcess::getPlaceableConstrainingPatterns(tile_ptr tile, const vector<weighted_pattern_t>& patternPool)
+	{
+		vector<PatternInfo> placeablePatterns;
+
+		for (const weighted_pattern_t& pattern : patternPool)
+		{
+			for (const RotationInfo& rotationInfo : pattern.pattern.canReceive(tile->getPattern()))
+			{
+				placeablePatterns.push_back({ pattern, rotationInfo });
+			}
+		}
+
+		return placeablePatterns;
+	}
+
+	void GenerationProcess::populateConstrained(const vector<tag_t>& patternTags)
+	{
+		vector<tile_ptr> tiles = grid.getValidTiles();
+
+		computeConstraintsFromNeighbors(tiles);
+		printer::printConstraints("constraints.txt", grid);
+		for (tile_ptr tile : tiles)
+		{
+			try
+			{
+				choosePlaceableConstrainingPatternAndMerge(tile, patternTags);
+			}
+			catch (...)
+			{
+				continue;
+			}
 		}
 	}
 

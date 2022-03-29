@@ -91,6 +91,23 @@ namespace ProceduralGen
 		void resetGrid();
 		void populate(const vector<tag_t>& patternTags);
 
+		static void computeConstraintsFromNeighbors(tile_ptr tile, vector<tile_ptr> neighbors);
+		void computeConstraintsFromNeighbors(vector<tile_ptr>& tiles) const;
+
+		static vector<PatternInfo> getPlaceableConstrainingPatterns(tile_ptr tile, const vector<weighted_pattern_t>& patternPool);
+		template <class Tag>
+		PatternInfo choosePlaceableConstrainingPatternAndMerge(tile_ptr tile, Tag tag)
+		{
+			vector<PatternInfo> placeablePatternsInfo = getPlaceableConstrainingPatterns(tile, generationData.getPatterns(tag));
+
+			PatternInfo patternInfo = choosePattern(placeablePatternsInfo);
+
+			merge(tile, patternInfo.weightedPattern.pattern, patternInfo.rotationInfo);
+
+			return patternInfo;
+		}
+		void populateConstrained(const vector<tag_t>& patternTags);
+
 #pragma endregion
 
 

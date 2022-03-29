@@ -55,7 +55,8 @@ int main()
 
 
 		// todo : some constrainsts are left over
-		gen.populate({  "Void", "Mine", "Building"});
+		gen.populate({  "Void", "Mine"});
+		gen.populateConstrained({   "Building"});
 	}
 	catch(...)
 	{
