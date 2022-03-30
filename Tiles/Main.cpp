@@ -53,8 +53,6 @@ int main()
 
 		gen.buildRiver({"RiverEnd",	"RiverEnd",	"River",	nullptr,	'R',	30	});
 
-
-		// todo : some constrainsts are left over
 		gen.populate({  "Void", "Mine"});
 		gen.populateConstrained({   "Building"});
 	}

@@ -13,7 +13,7 @@ namespace shinmathlib {
 		IntType chooseIndex(const IntType& size, std::mt19937& prng)
 		{
 			if (size == 0) throw cannot_choose_in_empty_range{};
-			const std::uniform_int_distribution<IntType> chooser{ 0, size - 1 };
+			std::uniform_int_distribution<IntType> chooser{ 0, size - 1 };
 			return chooser(prng);
 		}
 
@@ -21,7 +21,7 @@ namespace shinmathlib {
 		IntType chooseIndex(const std::vector<ProbaType>& probability, std::mt19937& prng)
 		{
 			if (probability.empty()) throw cannot_choose_in_empty_range{};
-			const std::discrete_distribution<IntType> chooser{ probability.begin(), probability.end() };
+			std::discrete_distribution<IntType> chooser{ probability.begin(), probability.end() };
 			return chooser(prng);
 		}
 

@@ -5,7 +5,6 @@
 #include <vector>
 #include <functional>
 
-// Todo : remove those includes
 #include <chrono>
 
 #include "GenerationData.h"
@@ -68,7 +67,6 @@ namespace ProceduralGen
 	private:
 		tile_ptr getRandomPos();
 		tile_ptr getRandomPosWithCondition(const std::function<bool(tile_ptr)>& condition = trueCondition);
-		tile_ptr getNextTile();
 
 		static vector<PatternInfo> getPlaceablePatterns(tile_ptr tile, const vector<weighted_pattern_t>& patternPool);
 		PatternInfo choosePattern(vector<PatternInfo>& placeablePatternsInfo);

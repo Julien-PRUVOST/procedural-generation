@@ -42,12 +42,6 @@ namespace ProceduralGen
 		return pool[index];
 	}
 
-	GenerationProcess::tile_ptr GenerationProcess::getNextTile()
-	{
-		// Todo : The next tile is the most constrained tile
-		return nullptr;
-	}
-
 #pragma region Placeable_Patterns
 
 	vector<GenerationProcess::PatternInfo> GenerationProcess::getPlaceablePatterns(tile_ptr tile, const vector<weighted_pattern_t>& patternPool)

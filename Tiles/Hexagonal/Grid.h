@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include <vector>
 #include "../Tile.h"
-#include "../ShinMathLib/VectorMath.h"
 
 namespace Hexagonal {
 	using namespace std;

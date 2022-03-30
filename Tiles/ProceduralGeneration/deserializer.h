@@ -151,7 +151,7 @@ namespace ProceduralGen
 
 			if (line.find("# Encoding", 0) == 0)
 			{
-				deserializeCategory<Generation::WeightedPattern>(file, line, gen);
+				deserializeCategory<typename Generation::WeightedPattern>(file, line, gen);
 			}
 		}
 	}
